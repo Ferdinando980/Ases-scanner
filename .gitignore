@@ -1,0 +1,23 @@
+ASES_recap*
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+*.egg-info/
+dist/
+build/
+*.ases/
+benchmarks/*-output/
+/VALIDATION-REPORT.json
+
+# Local working records; user guides belong in docs/.
+/.local/
+/DEVELOPMENT-RECORD*.md
+/SELF-HOSTING.md
+/docs/REA-IMPLEMENTATION.md
+/docs/REVIEW-2026-10-14.md

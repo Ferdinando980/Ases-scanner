@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ases.dev/schema/artifact-snapshot-v1.0.json",
+  "title": "ASES Supplied Artifact Snapshot 1.0",
+  "type": "object",
+  "required": ["schema", "snapshot_id", "files", "source_maps", "coverage", "unknowns", "analysis_profile", "limitations"],
+  "properties": {
+    "schema": {"const": "ases-artifact-snapshot/1.0"},
+    "snapshot_id": {"type": "string", "pattern": "^artifact:[0-9a-f]{64}$"},
+    "files": {"type": "array", "items": {"type": "object", "required": ["path", "sha256", "bytes", "source_role", "syntax_status"], "properties": {"path": {"type": "string"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "bytes": {"type": "integer", "minimum": 0}, "source_role": {"const": "BUILD_ARTIFACT"}, "syntax_status": {"enum": ["ANALYZED", "PARTIAL", "UNKNOWN", "NOT_APPLICABLE"]}}}},
+    "source_maps": {"type": "array"}, "coverage": {"type": "object"}, "unknowns": {"type": "array"},
+    "analysis_profile": {"type": "object"}, "limitations": {"type": "array"}, "untrusted_content": {"const": true}
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "ases-ts-fixture",
+  "dependencies": {
+    "express": "^5.0.0",
+    "@nestjs/common": "^11.0.0",
+    "@prisma/client": "^6.0.0"
+  }
+}

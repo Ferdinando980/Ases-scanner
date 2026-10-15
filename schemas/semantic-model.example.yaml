@@ -1,0 +1,21 @@
+ases_version: 0.3.0
+project:
+  name: example
+  entry_mode: BROWNFIELD-UNDOCUMENTED
+  languages: []
+  frameworks: []
+
+evidence_states: [CONFIRMED, OBSERVED, INFERRED, UNKNOWN, CONFLICTING]
+actors: []
+behaviors: []
+components: []
+interfaces: []
+data_stores: []
+external_systems: []
+assets: []
+trust_boundaries: []
+assumptions: []
+tests: []
+trace_links: []
+conflicts: []
+unknowns: []

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ASES Traceability",
+  "type": "object",
+  "required": ["version", "project", "requirements"],
+  "properties": {
+    "version": {"type": "string"},
+    "project": {"type": "string"},
+    "requirements": {"type": "object"},
+    "patterns": {"type": "object"},
+    "orphans": {"type": "object"}
+  },
+  "additionalProperties": true
+}

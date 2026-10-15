@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="760" viewBox="0 0 1000 760" role="img" aria-labelledby="title desc">
+  <title id="title">An illustrative ASES finding and its evidence</title>
+  <desc id="desc">An architecture contradiction is supported by an observed layered structure and a controller calling a repository directly. The record retains source ownership, confidence, scope and a review action. This is an illustration, not a scan result.</desc>
+  <rect width="1000" height="760" rx="24" fill="#f0f4f7"/>
+  <g font-family="Arial, sans-serif">
+    <text x="40" y="64" font-size="36" font-weight="700" fill="#152839">One finding. The receipts included.</text>
+    <text x="40" y="107" font-size="22" fill="#4b6273">A claim you can inspect, question, and follow back to the code.</text>
+    <rect x="40" y="143" width="920" height="540" rx="16" fill="#ffffff" stroke="#c4d3df" stroke-width="2"/>
+    <rect x="64" y="170" width="222" height="40" rx="9" fill="#fde9dc"/>
+    <text x="175" y="197" text-anchor="middle" font-size="20" font-weight="700" fill="#824418">CONTRADICTED</text>
+    <text x="309" y="197" font-size="21" fill="#4b6273">against this project's observed structure</text>
+    <text x="64" y="257" font-size="32" font-weight="700" fill="#152839">A controller skips the service layer</text>
+    <path d="M64 281H936" stroke="#dbe4eb" stroke-width="2"/>
+    <g font-size="22" fill="#4b6273" font-weight="700">
+      <text x="64" y="329">Pattern evidence</text><text x="64" y="388">Counter-evidence</text>
+      <text x="64" y="447">Source role</text><text x="64" y="506">Confidence</text>
+      <text x="64" y="565">Scope</text><text x="64" y="624">Next step</text>
+    </g>
+    <g font-size="23" fill="#152839">
+      <text x="286" y="329">Controllers → services → repositories</text>
+      <text x="286" y="388">UserController → UserRepository</text>
+      <text x="286" y="447">OWNED_SOURCE</text>
+      <text x="286" y="506">high · static source evidence</text>
+      <text x="286" y="565">One dependency; runtime unverified.</text>
+      <text x="286" y="624">Review the deviation in this project's context.</text>
+    </g>
+    <text x="40" y="729" font-size="21" fill="#4b6273">Illustrative example. A deviation is not automatically a vulnerability.</text>
+  </g>
+</svg>

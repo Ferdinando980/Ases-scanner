@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ASES Finding Diff 2.0",
+  "type": "object",
+  "required": ["schema", "summary", "new", "resolved", "changed", "unchanged", "unknown", "unknown_count", "resolution_authority"],
+  "properties": {
+    "schema": {"const": "ases-finding-diff/2.0"}, "summary": {"type": "object"},
+    "new": {"type": "array"}, "resolved": {"type": "array"}, "changed": {"type": "array"}, "unchanged": {"type": "array"},
+    "unknown": {"type": "array", "items": {"type": "object", "required": ["before", "reason"]}},
+    "unknown_count": {"type": "integer", "minimum": 0}, "resolution_authority": {"const": "supported-static-scope-only"}
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "schema": "ases-accuracy-corpus/1",
+  "label_review": "Etichette del corpus di regressione con motivazioni verificabili; revisione indipendente non ancora completata.",
+  "limitations": [
+    "Corpus sintetico e piccolo, selezionato dopo le regressioni note: non è un campione casuale, un holdout indipendente o una stima su tutti i repository.",
+    "Le capacità non presenti nei selettori restano fuori valutazione. I numeri non misurano sicurezza, esecuzione dei test o correttezza della documentazione generata.",
+    "Gli unknown verificano una dichiarazione di limite, non il recupero del comportamento mancante. Copertura statica e accuratezza sono misure diverse.",
+    "I giudizi sui suggerimenti architetturali sono motivati ma richiedono revisione umana; non equivalgono a una verità universale di progettazione.",
+    "La proiezione confronta tipo, file e nome, non tutte le proprietà semantiche. Collisioni di proiezione fanno fallire il caso e sono mostrate.",
+    "Servono ancora un corpus pubblico con revisioni congelate e annotazioni complete per capacità, varianti più ampie dei framework e una matrice di piattaforme/versioni."
+  ],
+  "cases": [
+    {
+      "id": "flask-blueprint-methods",
+      "family": "Route dichiarate", "language": "Python",
+      "rationale": "Blueprint con prefisso letterale, alias import e due metodi espliciti. HEAD/OPTIONS impliciti non fanno parte del recupero dichiarato.",
+      "files": {"app.py": "from flask import Blueprint as BP\nbp = BP('auth', __name__, url_prefix='/auth')\n@bp.route('/login', methods=['GET', 'POST'])\ndef login(): return 'ok'\n"},
+      "scope": {"collection": "entities", "select": ["route"], "complete": true},
+      "oracle": {"present": [["route", "app.py", "GET /auth/login"], ["route", "app.py", "POST /auth/login"]], "absent": [["route", "app.py", "GET /login"], ["route", "app.py", "HEAD /auth/login"], ["route", "app.py", "OPTIONS /auth/login"]]},
+      "metamorphic": true
+    },
+    {
+      "id": "flask-multiple-mounts",
+      "family": "Route dichiarate", "language": "Python",
+      "rationale": "Due registrazioni locali esplicite sostituiscono il prefisso originario del Blueprint.",
+      "files": {"app.py": "from flask import Flask, Blueprint\napp = Flask(__name__)\nbp = Blueprint('api', __name__, url_prefix='/default')\n@bp.get('/items')\ndef items(): return []\napp.register_blueprint(bp, url_prefix='/v1')\napp.register_blueprint(bp, url_prefix='/v2', name='second')\n"},
+      "scope": {"collection": "entities", "select": ["route"], "complete": true},
+      "oracle": {"present": [["route", "app.py", "GET /v1/items"], ["route", "app.py", "GET /v2/items"]], "absent": [["route", "app.py", "GET /default/items"]]},
+      "metamorphic": true
+    },
+    {
+      "id": "flask-factory",
+      "family": "Route dichiarate", "language": "Python",
+      "rationale": "La factory contiene un handler asincrono e un Blueprint locale. La dichiarazione POST è osservabile senza chiamare create_app.",
+      "files": {"app.py": "from flask import Flask, Blueprint\ndef create_app():\n    app = Flask(__name__)\n    bp = Blueprint('api', __name__, url_prefix='/api')\n    @bp.post('/items')\n    async def create(): return 'ok'\n    app.register_blueprint(bp, url_prefix='/v1')\n    return app\n"},
+      "scope": {"collection": "entities", "select": ["route"], "complete": true},
+      "oracle": {"present": [["route", "app.py", "POST /v1/items"]], "absent": [["route", "app.py", "GET /v1/items"], ["route", "app.py", "POST /api/items"]]},
+      "metamorphic": true
+    },
+    {
+      "id": "express-getters-and-handlers",
+      "family": "Route dichiarate", "language": "JavaScript",
+      "rationale": "app.get con un solo argomento legge configurazione. Le due chiamate con handler dichiarano route; commenti e stringhe non contano.",
+      "files": {"server.js": "function handler(req, res) { return res.send('ok'); }\napp.get('etag fn'); app.get('/setting');\napp.get('/real', handler); app.post('/save', handler);\n// app.get('/fake', handler);\nconst example = \"app.get('/string', handler)\";\n"},
+      "scope": {"collection": "entities", "select": ["route"], "complete": true},
+      "oracle": {"present": [["route", "server.js", "GET /real"], ["route", "server.js", "POST /save"]], "absent": [["route", "server.js", "GET etag fn"], ["route", "server.js", "GET /setting"], ["route", "server.js", "GET /fake"], ["route", "server.js", "GET /string"]]},
+      "metamorphic": true
+    },
+    {
+      "id": "flask-dynamic-prefix",
+      "family": "Limiti dichiarati", "language": "Python",
+      "rationale": "Il prefisso arriva da configurazione: nessuna route completa è dimostrata. Si verifica l'unknown, senza assegnare merito per il comportamento non recuperato.",
+      "files": {"app.py": "from flask import Blueprint\nbp = Blueprint('api', __name__, url_prefix=from_config)\n@bp.get('/items')\ndef items(): return []\n"},
+      "scope": {"collection": "entities", "select": ["route"], "complete": true},
+      "oracle": {"present": [], "absent": [["route", "app.py", "GET /items"]]},
+      "required_unknowns": ["python_flask_blueprint_prefix_unresolved"],
+      "unsupported": ["URL completo del Blueprint con prefisso dinamico"],
+      "metamorphic": true
+    },
+    {
+      "id": "python-conditional-declaration",
+      "family": "Limiti dichiarati", "language": "Python",
+      "rationale": "La registrazione dipende da una condizione non risolta. Il caso verifica che ASES renda esplicito questo limite, non un recupero esaustivo delle route condizionali.",
+      "files": {"app.py": "def create_app():\n    app = make_app()\n    if enabled:\n        @app.get('/maybe')\n        def maybe(): return 'ok'\n    return app\n"},
+      "scope": {"collection": "entities", "select": ["route"], "complete": false},
+      "oracle": {"present": [], "absent": []},
+      "required_unknowns": ["python_conditional_declaration_unresolved"],
+      "unsupported": ["Handler e registrazione sotto controllo di flusso condizionale"],
+      "metamorphic": true
+    },
+    {
+      "id": "junit-annotation-variants",
+      "family": "Dichiarazioni di test", "language": "Java",
+      "rationale": "JUnit consente metodi di test package-private. Si includono annotazione qualificata, parametrizzata, ripetuta e metodo pubblico.",
+      "files": {"src/test/java/demo/ExampleTest.java": "package demo;\nclass ExampleTest {\n @org.junit.jupiter.api.Test void plain() {}\n @ParameterizedTest void parameterized() {}\n @RepeatedTest(2) void repeated() {}\n @Test public void visible() {}\n void helper() {}\n}\n"},
+      "scope": {"collection": "entities", "select": ["test"], "complete": true},
+      "oracle": {"present": [["test", "src/test/java/demo/ExampleTest.java", "plain"], ["test", "src/test/java/demo/ExampleTest.java", "parameterized"], ["test", "src/test/java/demo/ExampleTest.java", "repeated"], ["test", "src/test/java/demo/ExampleTest.java", "visible"]], "absent": [["test", "src/test/java/demo/ExampleTest.java", "helper"]]},
+      "metamorphic": true
+    },
+    {
+      "id": "junit-comment-string-negatives",
+      "family": "Dichiarazioni di test", "language": "Java",
+      "rationale": "Annotazioni scritte in commenti o stringhe non creano test. BeforeEach è preparazione, non un test eseguibile autonomo.",
+      "files": {"src/test/java/demo/NoiseTest.java": "package demo;\nclass NoiseTest {\n // @Test void fakeLine() {}\n /* @Test void fakeBlock() {} */\n String example = \"@Test void fakeString() {}\";\n @BeforeEach void setup() {}\n @Test void real() {}\n}\n"},
+      "scope": {"collection": "entities", "select": ["test"], "complete": true},
+      "oracle": {"present": [["test", "src/test/java/demo/NoiseTest.java", "real"]], "absent": [["test", "src/test/java/demo/NoiseTest.java", "fakeLine"], ["test", "src/test/java/demo/NoiseTest.java", "fakeBlock"], ["test", "src/test/java/demo/NoiseTest.java", "fakeString"], ["test", "src/test/java/demo/NoiseTest.java", "setup"]]},
+      "metamorphic": true
+    },
+    {
+      "id": "js-local-alias-and-shadow",
+      "family": "Chiamate risolte", "language": "JavaScript",
+      "rationale": "L'alias importato deve risolvere read nel modulo corretto. Un parametro omonimo oscura l'import e non autorizza quel collegamento.",
+      "files": {"repo.mjs": "export function read() { return 1; }\n", "other.mjs": "export function read() { return 2; }\n", "server.mjs": "import {read as get} from './repo.mjs';\nexport function handler() { return get(); }\nexport function shadow(get) { return get(); }\n"},
+      "scope": {"collection": "relations", "select": ["calls"], "complete": true},
+      "oracle": {"present": [["calls", "function", "server.mjs", "handler", "function", "repo.mjs", "read"]], "absent": [["calls", "function", "server.mjs", "handler", "function", "other.mjs", "read"], ["calls", "function", "server.mjs", "shadow", "function", "repo.mjs", "read"]]},
+      "metamorphic": true
+    },
+    {
+      "id": "python-local-helper-and-shadow",
+      "family": "Chiamate risolte", "language": "Python",
+      "rationale": "Chiamata lessicale a helper nella factory; il parametro di shadow non deve collegarsi alla funzione helper locale.",
+      "files": {"app.py": "def create_app():\n    def helper(): return 1\n    def handler(): return helper()\n    def shadow(helper): return helper()\n    return handler\n"},
+      "scope": {"collection": "relations", "select": ["calls"], "complete": true},
+      "oracle": {"present": [["calls", "function", "app.py", "handler", "function", "app.py", "helper"]], "absent": [["calls", "function", "app.py", "shadow", "function", "app.py", "helper"]]},
+      "metamorphic": true
+    },
+    {
+      "id": "js-literal-http-call",
+      "family": "Classificazione chiamate", "language": "JavaScript",
+      "rationale": "fetch con URL HTTPS letterale costituisce una chiamata API esterna statica; non dimostra traffico realmente avvenuto.",
+      "files": {"client.mjs": "export function read() { return fetch('https://example.test/users'); }\n"},
+      "scope": {"collection": "entities", "select": ["external_api_call"], "complete": true},
+      "oracle": {"present": [["external_api_call", "client.mjs", "GET https://example.test/users"]], "absent": []},
+      "metamorphic": true
+    },
+    {
+      "id": "js-local-path-utility",
+      "family": "Classificazione chiamate", "language": "JavaScript",
+      "rationale": "path.join combina percorsi locali. La politica valutata richiede che non diventi external_api_call, perché quel tipo può terminare un percorso di confine. L'importazione esterna al progetto resta osservabile separatamente. Riferimento: https://nodejs.org/api/path.html#pathjoinpaths",
+      "files": {"client.mjs": "import path from 'node:path';\nexport function locate() { return path.join('a', 'b'); }\n"},
+      "scope": {"collection": "entities", "select": ["external_api_call"], "complete": true},
+      "oracle": {"present": [], "absent": [["external_api_call", "client.mjs", "path.join"]]},
+      "metamorphic": true
+    },
+    {
+      "id": "observer-direct-fanout-mjs",
+      "family": "Suggerimenti Observer", "language": "JavaScript",
+      "rationale": "Stessa prova positiva del file .js, con estensione .mjs. Il confronto misura una lacuna di copertura fra suffissi JavaScript; non prova che il refactoring sia necessario.",
+      "files": {"events.mjs": "export function notifyAll() {\n mailListener.update(); auditListener.update(); billingListener.update();\n}\n"},
+      "scope": {"collection": "findings", "select": ["opportunity.observer_fanout"], "complete": true},
+      "oracle": {"present": [["opportunity.observer_fanout", "OPPORTUNITY"]], "absent": []},
+      "metamorphic": true
+    },
+    {
+      "id": "observer-direct-fanout-js",
+      "family": "Suggerimenti Observer", "language": "JavaScript",
+      "rationale": "Tre chiamate dirette a listener distinti giustificano una possibilità di disaccoppiamento, senza provare che il refactoring sia necessario.",
+      "files": {"events.js": "export function notifyAll() {\n mailListener.update(); auditListener.update(); billingListener.update();\n}\n"},
+      "scope": {"collection": "findings", "select": ["opportunity.observer_fanout"], "complete": true},
+      "oracle": {"present": [["opportunity.observer_fanout", "OPPORTUNITY"]], "absent": []},
+      "metamorphic": true
+    },
+    {
+      "id": "observer-already-pubsub",
+      "family": "Suggerimenti Observer", "language": "JavaScript",
+      "rationale": "I tre EventEmitter dispongono già di sottoscrizione e pubblicazione. Il solo conteggio degli emit non basta per consigliare Observer: serve controevidenza. Giudizio di qualità del suggerimento, da revisionare umanamente. Riferimento: https://nodejs.org/api/events.html#class-eventemitter",
+      "files": {"events.js": "import {EventEmitter} from 'node:events';\nconst userEvents = new EventEmitter();\nconst auditEvents = new EventEmitter();\nconst billingEvents = new EventEmitter();\nexport function publish() {\n userEvents.emit('updated'); auditEvents.emit('updated'); billingEvents.emit('updated');\n}\n"},
+      "scope": {"collection": "findings", "select": ["opportunity.observer_fanout"], "complete": true},
+      "oracle": {"present": [], "absent": [["opportunity.observer_fanout", "OPPORTUNITY"]]},
+      "metamorphic": true
+    },
+    {
+      "id": "observer-insufficient-evidence",
+      "family": "Suggerimenti Observer", "language": "JavaScript",
+      "rationale": "Due normali chiamate non bastano alla regola fan-out. Il negativo impedisce che qualsiasi modulo di coordinamento diventi un consiglio architetturale.",
+      "files": {"events.js": "export function run() { mailListener.update(); auditListener.update(); }\n"},
+      "scope": {"collection": "findings", "select": ["opportunity.observer_fanout"], "complete": true},
+      "oracle": {"present": [], "absent": [["opportunity.observer_fanout", "OPPORTUNITY"]]},
+      "metamorphic": true
+    }
+  ]
+}

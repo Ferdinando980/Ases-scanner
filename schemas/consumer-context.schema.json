@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ases.dev/schema/consumer-context-v1.5.json",
+  "title": "ASES Generic Consumer Context v1.5",
+  "type": "object",
+  "required": ["schema","project","behaviors","components","trace_links","pattern_findings","claims"],
+  "properties": {
+    "schema":{"const":"ases-consumer-context/1.5"},
+    "ases_version":{"type":["string","null"]},
+    "generated_at":{"type":"string"},
+    "project_fingerprint":{"type":["string","null"]},
+    "project":{"type":"object"}, "actors":{"type":"array"}, "behaviors":{"type":"array"},
+    "components":{"type":"array"}, "interfaces":{"type":"array"}, "data_stores":{"type":"array"},
+    "external_systems":{"type":"array"},
+    "assets":{"type":"array"},
+    "frontend":{"type":"object"},
+    "trust_boundaries":{"type":"array"}, "controls":{"type":"array"}, "assumptions":{"type":"array"},
+    "tests":{"type":"array"}, "trace_links":{"type":"array"}, "conflicts":{"type":"array"},
+    "unknowns":{"type":"array"}, "sessions":{"type":"array"}, "documentation_artifacts":{"type":"array"}, "source_classification":{"type":"object"},
+    "semantic_quality":{"type":"object"}, "claim_states":{"type":"array"}, "claims":{"type":"array"},
+    "pattern_findings":{"type":"array"}, "conformance_findings":{"type":"array"},
+    "frontend_findings":{"type":"array"}, "cross_boundary_findings":{"type":"array"},
+    "architecture_patterns":{"type":"array"}, "pattern_candidates":{"type":"array"},
+    "pattern_opportunities":{"type":"array"}, "pattern_hints":{"type":"array"}
+  }
+}

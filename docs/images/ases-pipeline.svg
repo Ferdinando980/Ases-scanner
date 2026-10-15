@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="680" viewBox="0 0 1000 680" role="img" aria-labelledby="title desc">
+  <title id="title">ASES: read the code, keep the evidence</title>
+  <desc id="desc">Five steps: classify source ownership, parse syntax, reconstruct static relations, explain supported findings, and compare snapshots with scoped coverage. ASES does not execute the target.</desc>
+  <rect width="1000" height="680" rx="24" fill="#101923"/>
+  <g font-family="Arial, sans-serif">
+    <text x="40" y="53" font-size="24" font-weight="700" fill="#8ee0ca">ASES</text>
+    <text x="960" y="53" text-anchor="end" font-size="20" fill="#a9b8c7">STATIC SOFTWARE ANALYSIS</text>
+    <text x="40" y="124" font-size="44" font-weight="700" fill="#f3f7fb">Read the code. Keep the evidence.</text>
+    <text x="40" y="169" font-size="23" fill="#b9c8d7">Architecture and static calls, with the receipts attached.</text>
+    <g fill="#1b2937" stroke="#3c5367" stroke-width="2">
+      <rect x="40" y="219" width="288" height="158" rx="14"/>
+      <rect x="356" y="219" width="288" height="158" rx="14"/>
+      <rect x="672" y="219" width="288" height="158" rx="14"/>
+      <rect x="40" y="405" width="446" height="157" rx="14"/>
+      <rect x="514" y="405" width="446" height="157" rx="14"/>
+    </g>
+    <g font-size="27" font-weight="700" fill="#8ee0ca">
+      <text x="62" y="265">1 / Classify</text><text x="378" y="265">2 / Parse</text><text x="694" y="265">3 / Reconstruct</text>
+      <text x="62" y="451">4 / Explain</text><text x="536" y="451">5 / Compare</text>
+    </g>
+    <g font-size="22" fill="#e1eaf2">
+      <text x="62" y="309">Owned source / tests</text><text x="62" y="344">Generated / vendor</text>
+      <text x="378" y="309">Symbols and imports</text><text x="378" y="344">Routes and literal calls</text>
+      <text x="694" y="309">Calls and dependencies</text><text x="694" y="344">Tests and local controls</text>
+      <text x="62" y="495">Sources, confidence, limitations.</text><text x="62" y="530">Unknown stays unknown.</text>
+      <text x="536" y="495">Stable IDs and scoped differences.</text><text x="536" y="530">Missing evidence? Still unknown.</text>
+    </g>
+    <path d="M40 604H960" stroke="#3c5367" stroke-width="2"/>
+    <text x="40" y="644" font-size="23" fill="#b9c8d7">No target execution. No architecture horoscopes.</text>
+  </g>
+</svg>

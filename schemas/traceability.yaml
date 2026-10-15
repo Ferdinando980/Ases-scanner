@@ -1,0 +1,45 @@
+version: "0.2"
+project: "example"
+
+requirements:
+  RF-001:
+    statement: "Example requirement"
+    priority: high
+    status: active
+    source: stakeholder
+    analysis:
+      scenarios: [SC-001]
+      use_cases: [UC-001]
+      classes: []
+      sequences: []
+      activities: []
+      statecharts: []
+      ui: []
+    system_design:
+      design_goals: []
+      subsystems: [SUB-001]
+      services: []
+      decisions: []
+    object_design:
+      classes: [ExampleService]
+      interfaces: []
+      contracts: []
+      pattern_decisions: [DDR-001]
+    implementation:
+      files:
+        - path: src/example.py
+          symbols: [ExampleService]
+    tests:
+      cases: [TC-001]
+      results: []
+
+patterns:
+  DDR-001:
+    decision: NO_PATTERN
+    problem: "Example direct implementation"
+    evidence: "No independent variation point"
+    related_requirements: [RF-001]
+
+orphans:
+  allowed_code: []
+  allowed_tests: []

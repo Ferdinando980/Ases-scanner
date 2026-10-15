@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ases.dev/schema/consumer-context-v2.0.json",
+  "title": "ASES Public Structural Snapshot 2.0",
+  "type": "object",
+  "required": ["schema", "snapshot_id", "project", "analysis_profile", "entities", "observations", "structural_relations", "identity_mapping", "coverage", "source_manifest"],
+  "properties": {
+    "schema": {"const": "ases-consumer-context/2.0"},
+    "snapshot_id": {"type": "string", "pattern": "^snapshot:[0-9a-f]{64}$"},
+    "project": {"type": "object"},
+    "analysis_profile": {"type": "object"},
+    "coverage": {"type": "object", "required": ["files", "paths", "dimensions"], "properties": {
+      "files": {"type": "object"}, "paths": {"type": "array"}, "dimensions": {"type": "object"},
+      "relationship_families": {"type": "object", "additionalProperties": {
+        "type": "object", "required": ["declarations", "imports", "calls", "type_heritage", "controls", "tests"],
+        "additionalProperties": false, "properties": {
+          "declarations": {"$ref": "#/$defs/familyCoverage"}, "imports": {"$ref": "#/$defs/familyCoverage"},
+          "calls": {"$ref": "#/$defs/familyCoverage"}, "type_heritage": {"$ref": "#/$defs/familyCoverage"},
+          "controls": {"$ref": "#/$defs/familyCoverage"}, "tests": {"$ref": "#/$defs/familyCoverage"}
+        }
+      }}
+    }},
+    "source_manifest": {"type": "array", "items": {"type": "object", "required": ["path", "sha256"], "properties": {"path": {"type": "string"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}}},
+    "entities": {"type": "array", "items": {"type": "object", "required": ["id", "name", "kind", "identity", "observation_refs"], "properties": {"id": {"type": "string"}, "name": {"type": "string"}, "kind": {"type": "string"}, "identity": {"type": "object", "required": ["strategy", "scope", "state"], "properties": {"state": {"enum": ["unique", "ambiguous"]}}}, "observation_refs": {"$ref": "#/$defs/refs"}}}},
+    "observations": {"type": "array", "items": {"type": "object", "required": ["id", "subject_ref", "predicate", "state", "authority", "confidence", "locations", "source_hashes", "extractor", "limitations"], "properties": {"id": {"type": "string", "pattern": "^observation:[0-9a-f]{64}$"}, "state": {"enum": ["CONFIRMED", "OBSERVED", "INFERRED", "UNKNOWN", "CONFLICTING"]}, "authority": {"enum": ["source-syntax", "static-relationship"]}, "confidence": {"enum": ["high", "medium", "low"]}, "source_hashes": {"type": "object"}, "extractor": {"type": "object"}, "locations": {"type": "array", "items": {"type": "object", "required": ["kind", "path", "line"], "properties": {"kind": {"const": "source"}, "path": {"type": "string"}, "line": {"type": ["integer", "null"], "minimum": 1}}}}, "limitations": {"type": "array", "items": {"type": "string"}}}}},
+    "structural_relations": {"type": "array", "items": {"type": "object", "required": ["id", "from", "to", "relation", "state", "basis", "observation_refs"], "properties": {"id": {"type": "string"}, "from": {"type": "string"}, "to": {"type": "string"}, "relation": {"type": "string"}, "state": {"const": "INFERRED"}, "observation_refs": {"$ref": "#/$defs/refs"}}}},
+    "identity_mapping": {"type": "array", "items": {"type": "object", "required": ["legacy_id", "canonical_id", "state"], "properties": {"legacy_id": {"type": "string"}, "canonical_id": {"type": "string"}, "state": {"enum": ["unique", "ambiguous"]}}}},
+    "untrusted_content": {"const": true}
+  },
+  "allOf": [{
+    "if": {"properties": {"analysis_profile": {"properties": {"coverage": {"const": "scoped/2"}}, "required": ["coverage"]}}},
+    "then": {"properties": {"coverage": {"required": ["relationship_families"]}}}
+  }],
+  "$defs": {
+    "refs": {"type": "array", "items": {"type": "string"}},
+    "familyCoverage": {
+      "type": "object", "required": ["status", "method", "scope", "reasons", "omitted_count"],
+      "properties": {
+        "status": {"enum": ["ANALYZED", "PARTIAL", "UNKNOWN", "NOT_OBSERVED", "NOT_APPLICABLE"]},
+        "method": {"type": "string", "minLength": 1},
+        "scope": {"type": "object", "required": ["path", "admitted"], "properties": {
+          "path": {"type": "string"}, "admitted": {"type": "string", "minLength": 1}
+        }},
+        "reasons": {"type": "array", "items": {"type": "string"}},
+        "omitted_count": {"type": ["integer", "null"], "minimum": 0}
+      }
+    }
+  }
+}

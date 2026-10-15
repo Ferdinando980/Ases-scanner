@@ -1,0 +1,495 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ases.dev/schema/semantic-model-v1.9.json",
+  "title": "ASES Semantic Software Model v1.9",
+  "type": "object",
+  "required": [
+    "ases_version",
+    "project",
+    "evidence_states"
+  ],
+  "properties": {
+    "ases_version": {
+      "type": "string"
+    },
+    "project": {
+      "type": "object",
+      "required": [
+        "name",
+        "entry_mode"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "entry_mode": {
+          "enum": [
+            "GREENFIELD",
+            "BROWNFIELD-DOCUMENTED",
+            "BROWNFIELD-UNDOCUMENTED",
+            "LIVE_SITE"
+          ]
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "frameworks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "source_uri": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_mode": {
+          "enum": ["LIVE_SITE"]
+        }
+      }
+    },
+    "source_classification": {"type":"object"},
+    "frontend": {"type":"object"},
+    "site_observations": {"type":["object","null"]},
+    "sensitive_paths": {"type":"array", "items":{"type":"object"}},
+    "frontend_findings": {"type":"array"},
+    "cross_boundary_findings": {"type":"array"},
+    "evidence_states": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "CONFIRMED",
+          "OBSERVED",
+          "INFERRED",
+          "UNKNOWN",
+          "CONFLICTING"
+        ]
+      }
+    },
+    "actors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entity"
+      }
+    },
+    "behaviors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/behavior"
+      }
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entity"
+      }
+    },
+    "interfaces": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entity"
+      }
+    },
+    "data_stores": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entity"
+      }
+    },
+    "external_systems": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entity"
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entity"
+      }
+    },
+    "trust_boundaries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entity"
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/claim"
+      }
+    },
+    "tests": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entity"
+      }
+    },
+    "trace_links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "from",
+          "to",
+          "relation"
+        ],
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "relation": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "unknowns": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/claim"
+      }
+    },
+    "pattern_candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "status",
+          "candidate_patterns",
+          "reason",
+          "confidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "candidate_patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "confidence": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        }
+      }
+    },
+    "controls": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          {
+            "$ref": "#/$defs/entity"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "control_type": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    "documentation_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "sessions": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "technical_relation_counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer"
+      }
+    },
+    "semantic_quality": {
+      "type": "object"
+    },
+    "pattern_opportunities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "category",
+          "pattern",
+          "status",
+          "reason",
+          "smell",
+          "confidence",
+          "evidence",
+          "guidance"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "CREATIONAL",
+              "STRUCTURAL",
+              "BEHAVIORAL"
+            ]
+          },
+          "pattern": {
+            "type": "string"
+          },
+          "status": {
+            "const": "OPPORTUNITY"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "confidence": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "guidance": {
+            "type": "string"
+          },
+          "smell": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pattern_findings": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "architecture_patterns": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "pattern_hints": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "claim_states": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "OBSERVED",
+          "INFERRED",
+          "OPPORTUNITY",
+          "HINT",
+          "UNKNOWN",
+          "CONTRADICTED",
+          "SUPPRESSED"
+        ]
+      }
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "conformance_findings": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "$defs": {
+    "provenance": {
+      "type": "object",
+      "required": [
+        "state"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "CONFIRMED",
+            "OBSERVED",
+            "INFERRED",
+            "UNKNOWN",
+            "CONFLICTING"
+          ]
+        },
+        "confidence": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "entity": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "required": [
+        "id",
+        "statement",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "statement": {
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "behavior": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/entity"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "actor": {
+              "type": "string"
+            },
+            "trigger": {
+              "type": "string"
+            },
+            "entry_points": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "preconditions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "main_flow": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "alternatives": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "side_effects": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

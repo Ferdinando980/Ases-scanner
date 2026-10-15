@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ASES Semantic Diff 2.0",
+  "type": "object",
+  "required": ["schema", "summary", "dimensions", "uncertain", "identity_remappings", "identity_candidates", "analysis_profile_changed", "absence_authority", "evidence_changed"],
+  "properties": {
+    "schema": {"const": "ases-semantic-diff/2.0"},
+    "summary": {"type": "object", "required": ["added", "removed", "changed"], "additionalProperties": {"type": "integer", "minimum": 0}},
+    "dimensions": {"type": "object"},
+    "uncertain": {"type": "array", "items": {"type": "object", "required": ["dimension", "id", "presence", "reason"], "properties": {"presence": {"enum": ["only_before", "only_after"]}}}},
+    "identity_remappings": {"type": "array"}, "identity_candidates": {"type": "array"},
+    "analysis_profile_changed": {"type": "boolean"}, "evidence_changed": {"type": "boolean"},
+    "absence_authority": {"enum": ["scoped-static", "unverified-legacy"]}
+  }
+}

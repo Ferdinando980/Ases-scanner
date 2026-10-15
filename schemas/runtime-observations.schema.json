@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ases.dev/schema/runtime-observations-v1.0.json",
+  "title": "ASES Imported Runtime Observation Contract 1.0",
+  "type": "object",
+  "required": ["schema", "collector", "environment", "captured_at", "coverage", "scripts"],
+  "properties": {
+    "schema": {"const": "ases-runtime-observations/1.0"},
+    "collector": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string", "minLength": 1}, "version": {"type": ["string", "null"]}}},
+    "environment": {"type": "object"}, "captured_at": {"type": "string"},
+    "coverage": {"type": "object", "required": ["status"], "properties": {"status": {"enum": ["ANALYZED", "PARTIAL", "UNKNOWN"]}}},
+    "scripts": {"type": "array", "items": {"type": "object", "required": ["location", "loaded"], "properties": {"location": {"type": "string"}, "loaded": {"type": "boolean"}, "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}}}}
+  }
+}

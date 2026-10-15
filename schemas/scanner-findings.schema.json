@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ases.dev/schema/scanner-findings-v1.3.json",
+  "title": "ASES Scanner Findings v1.3",
+  "type": "object",
+  "required": ["schema", "scanner", "project", "summary", "coverage", "findings", "hints", "suppressed"],
+  "properties": {
+    "schema": {"const": "ases-scanner-findings/1.3"},
+    "scanner": {"type":"object","required":["name","version"],"properties":{"name":{"const":"ASES"},"version":{"type":["string","null"]}}},
+    "project": {"type":"object"},
+    "summary": {"type":"object","required":["findings","observed_patterns","pattern_opportunities","architecture_contradictions","pattern_hints","suppressed"]},
+    "coverage": {"type":"object"},
+    "source_classification": {"type":"object"},
+    "findings": {"type":"array","items":{"$ref":"#/$defs/finding"}},
+    "hints": {"type":"array","items":{"$ref":"#/$defs/finding"}},
+    "suppressed": {"type":"array","items":{"$ref":"#/$defs/finding"}}
+  },
+  "$defs": {
+    "finding": {
+      "type":"object",
+      "required":["id","fingerprint","type","severity","status","confidence","scope","rule_id","evidence","counter_evidence","assumptions","message","guidance"],
+      "properties": {
+        "id":{"type":"string"}, "fingerprint":{"type":"string"}, "type":{"type":"string"},
+        "severity":{"enum":["info","warning"]},
+        "status":{"enum":["OBSERVED","INFERRED","OPPORTUNITY","HINT","UNKNOWN","CONTRADICTED","SUPPRESSED"]},
+        "category":{"type":["string","null"]}, "level":{"type":["string","null"]},
+        "pattern":{"type":["string","null"]}, "subject":{"type":["string","null"]},
+        "confidence":{"enum":["low","medium","high"]}, "scope":{"enum":["project","file"]},
+        "surface":{"enum":["project","backend","frontend","cross_boundary"]},
+        "actionability":{"enum":["informational","review","action_required"]},
+        "entity":{"type":"object"},
+        "source_role":{"type":"string"},
+        "rule_id":{"type":"string"}, "smell":{"type":["string","null"]},
+        "location":{"type":["object","null"]}, "evidence":{"type":"array","items":{"type":"string"}},
+        "evidence_strength":{"type":["string","null"]},
+        "counter_evidence":{"type":"array","items":{"type":"string"}},
+        "assumptions":{"type":"array","items":{"type":"string"}},
+        "signals":{"type":"object"}, "message":{"type":"string"}, "guidance":{"type":"string"}
+      }
+    }
+  }
+}

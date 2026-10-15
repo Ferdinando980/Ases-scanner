@@ -1,0 +1,15 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://ases.dev/schema/finding-diff-v1.0.json",
+  "title":"ASES Finding Diff v1.0",
+  "type":"object",
+  "required":["schema","summary","new","resolved","changed","unchanged"],
+  "properties":{
+    "schema":{"const":"ases-finding-diff/1.0"},
+    "summary":{"type":"object","required":["new","resolved","changed","unchanged"],"additionalProperties":{"type":"integer","minimum":0}},
+    "new":{"type":"array"},
+    "resolved":{"type":"array"},
+    "changed":{"type":"array"},
+    "unchanged":{"type":"array"}
+  }
+}

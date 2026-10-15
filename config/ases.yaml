@@ -1,0 +1,26 @@
+version: "0.2.0"
+default_rigor: standard
+
+paths:
+  docs: docs
+  traceability: docs/traceability.yaml
+
+policy:
+  require_pattern_gate_after_simplicity: true
+  allow_external_patterns: true
+  documentation_by_impact_only: true
+  require_tests_for_nontrivial_logic: true
+  protected_concerns:
+    - security
+    - trust_boundary_validation
+    - data_loss_prevention
+    - accessibility
+    - explicit_requirements
+
+formal_escalation:
+  - architecture
+  - authentication_authorization
+  - persistence_migration
+  - public_api_breaking_change
+  - concurrency_policy
+  - deployment_topology

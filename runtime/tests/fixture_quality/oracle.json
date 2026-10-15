@@ -1,0 +1,44 @@
+{
+  "schema": "ases-quality-oracle/1",
+  "cases": {
+    "spring_layers": {
+      "present": [
+        "architecture.layered:OBSERVED",
+        "architecture.mvc:OBSERVED",
+        "architecture.repository:OBSERVED",
+        "architecture.service_layer:OBSERVED"
+      ],
+      "absent": [
+        "structural.adapter_family:OBSERVED",
+        "opportunity.facade_repeated_orchestration:OPPORTUNITY",
+        "frontend.component_architecture:OBSERVED"
+      ],
+      "unsupported": ["CQRS", "Data Mapper"]
+    },
+    "frontend_contract": {
+      "present": [
+        "frontend.component_architecture:OBSERVED",
+        "frontend.api_service_layer:OBSERVED",
+        "cross_boundary.route_contract:OBSERVED"
+      ],
+      "absent": [
+        "frontend.conformance.api_service_bypass:CONTRADICTED",
+        "cross_boundary.http_method_mismatch:CONTRADICTED",
+        "frontend.server_rendered_templates:OBSERVED"
+      ],
+      "unsupported": ["runtime payload compatibility"]
+    },
+    "noise_only": {
+      "present": [],
+      "absent": [
+        "architecture.layered:OBSERVED",
+        "architecture.mvc:OBSERVED",
+        "architecture.repository:OBSERVED",
+        "architecture.service_layer:OBSERVED",
+        "frontend.component_architecture:OBSERVED",
+        "frontend.server_rendered_templates:OBSERVED"
+      ],
+      "unsupported": []
+    }
+  }
+}

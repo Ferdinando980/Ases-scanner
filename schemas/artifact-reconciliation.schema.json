@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ASES Artifact Reconciliation 1.0",
+  "type": "object",
+  "required": ["schema", "source_snapshot_id", "artifact_snapshot_id", "source_matches", "runtime_matches", "runtime_provenance", "coverage", "limitations", "untrusted_content"],
+  "properties": {
+    "schema": {"const": "ases-artifact-reconciliation/1.0"},
+    "source_snapshot_id": {"type": "string", "pattern": "^snapshot:[0-9a-f]{64}$"},
+    "artifact_snapshot_id": {"type": "string", "pattern": "^artifact:[0-9a-f]{64}$"},
+    "source_matches": {"type": "array", "items": {"$ref": "#/$defs/match"}},
+    "runtime_matches": {"type": "array", "items": {"$ref": "#/$defs/match"}},
+    "runtime_provenance": {"type": ["object", "null"]}, "coverage": {"type": "object"},
+    "limitations": {"type": "array", "items": {"type": "string"}}, "untrusted_content": {"const": true}
+  },
+  "$defs": {"match": {"type": "object", "required": ["status", "basis", "state", "candidates"], "properties": {"status": {"enum": ["matched", "ambiguous", "mismatch", "unknown"]}, "basis": {"type": "string"}, "state": {"const": "INFERRED"}, "candidates": {"type": "array", "items": {"type": "string"}}}}}
+}
