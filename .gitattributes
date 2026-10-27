@@ -1,0 +1,4 @@
+# Preserve binary fixtures and screenshots across checkouts.
+*.pdf binary
+*.png binary
+*.jpg binary

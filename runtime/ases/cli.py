@@ -16,11 +16,17 @@ def build_parser():
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = p.add_subparsers(dest="command", required=True)
 
+    ui = sub.add_parser("ui", help="Open the local analysis desk in your browser")
+    ui.add_argument("source", nargs="?", default="", help="Optional local project path to prefill")
+    ui.add_argument("--port", type=int, default=0, help="Loopback port (default: choose an available port)")
+    ui.add_argument("--no-browser", action="store_true", help="Print the session URL without opening a browser")
+
     scan = sub.add_parser("scan", help="Recover a semantic baseline from a local path or Git repository URL")
     scan.add_argument("source", help="Local repository path or Git URL")
     scan.add_argument("--out", help="Output directory")
     scan.add_argument("--json", action="store_true")
     scan.add_argument("--baseline", help="Previous .ases directory or scanner-findings.json; writes findings-diff.json")
+    scan.add_argument("--exclude", action="append", default=[], help="Additional source exclusion pattern; repeat as needed")
 
     site = sub.add_parser("scan-site", help="Observe the published frontend of a public HTTP(S) site")
     site.add_argument("url", help="Public website URL")
@@ -72,6 +78,32 @@ def build_parser():
     exp.add_argument("--out", required=True)
     exp.add_argument("--schema", choices=["1.5", "2.0"], default="1.5")
 
+    documents = sub.add_parser("documents", help="Generate engineering documents from a saved snapshot without running the target")
+    documents.add_argument("snapshot")
+    documents.add_argument("--out", required=True)
+    documents.add_argument("--review")
+    documents.add_argument("--language", choices=["it", "en"], default="it")
+    interpret = sub.add_parser('interpret', help='Propose cited interpretations using an explicitly selected local provider')
+    interpret.add_argument('snapshot')
+    interpret.add_argument('--provider', choices=['llm','gliner2'], default='llm')
+    interpret.add_argument('--endpoint', help='Required for provider llm: explicit numeric loopback model server')
+    interpret.add_argument('--model',default='auto')
+    interpret.add_argument('--python-executable', help='Required for gliner2: local Python runtime')
+    interpret.add_argument('--model-path', help='Required for gliner2: local model directory')
+    interpret.add_argument('--max-excerpts',type=int,default=3)
+    interpret.add_argument('--out',required=True)
+    runtime_template=sub.add_parser('runtime-template',help='Prepare source-bound HTTP observation provenance; does not execute the target')
+    runtime_template.add_argument('snapshot');runtime_template.add_argument('--out',required=True)
+    runtime_check=sub.add_parser('runtime-check',help='Correlate supplied HTTP observations with a saved source snapshot')
+    runtime_check.add_argument('snapshot');runtime_check.add_argument('--observations',required=True);runtime_check.add_argument('--out',required=True)
+    doc_eval = sub.add_parser("documents-evaluate", help="Measure document recovery against an explicit labelled corpus")
+    doc_eval.add_argument("corpus")
+    doc_eval.add_argument("--out", required=True)
+    doc_diff = sub.add_parser("documents-diff", help="Inspect changed engineering records and linked documentation impact")
+    doc_diff.add_argument("before")
+    doc_diff.add_argument("after")
+    doc_diff.add_argument("--out")
+
     clean = sub.add_parser("clean", help="Remove generated ASES scan output")
     clean.add_argument("path", nargs="?", help=".ases output directory to remove")
     clean.add_argument("--all", action="store_true", help="Remove direct .ases outputs in the current directory")
@@ -93,6 +125,51 @@ def main(argv=None):
 
 def _main(argv=None):
     args = build_parser().parse_args(argv)
+
+    if args.command == "ui":
+        from .ui import serve
+        return serve(args.source, port=args.port, open_browser=not args.no_browser)
+
+    if args.command == "documents":
+        from .engineering.service import regenerate
+        package = regenerate(Path(args.snapshot), Path(args.out), review=args.review, language=args.language)
+        print(json.dumps(package, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == 'interpret':
+        from .engineering.local_interpret import interpret as interpret_llm, write_result
+        if args.provider == 'llm':
+            if not args.endpoint:
+                raise ValueError('Provider llm requires --endpoint (numeric loopback only).')
+            result = interpret_llm(args.snapshot,args.endpoint,model_name=args.model,maximum=args.max_excerpts)
+        else:
+            if not args.python_executable or not args.model_path:
+                raise ValueError('Provider gliner2 requires --python-executable and --model-path.')
+            from .engineering.semantic_extract import interpret as interpret_gliner2
+            result = interpret_gliner2(args.snapshot,python_executable=args.python_executable,model_path=args.model_path,limit=args.max_excerpts)
+            # Keep the existing report writer contract while preserving the backend report.
+            result = {**result, 'candidates': result.get('hypotheses', []), 'rejected_candidates': 0}
+        report=write_result(result,args.out)
+        print(json.dumps(report,ensure_ascii=False,indent=2))
+        return 0 if not report['failures'] else 1
+    if args.command in {'runtime-template','runtime-check'}:
+        from .engineering.runtime_evidence import template,correlate
+        report=template(args.snapshot) if args.command=='runtime-template' else correlate(args.snapshot,args.observations)
+        with Path(args.out).open('x',encoding='utf-8') as stream:json.dump(report,stream,ensure_ascii=False,indent=2)
+        print(json.dumps(report,ensure_ascii=False,indent=2))
+        return 0
+    if args.command == "documents-evaluate":
+        from .engineering.evaluate import evaluate_documents
+        report = evaluate_documents(Path(args.corpus), Path(args.out))
+        print(json.dumps({"requirements": report["requirements"], "fields": report["fields"], "links": report["links"], "checks": report["checks"], "behavior_claims": report["behavior_claims"], "cases": len(report["cases"]), "seconds": report["seconds"]}, indent=2))
+        return 0 if all(c["passed"] for c in report["cases"]) else 1
+    if args.command == "documents-diff":
+        from .engineering.model import engineering_diff
+        from .engineering.service import load_reviewed_model
+        delta = engineering_diff(load_reviewed_model(args.before), load_reviewed_model(args.after))
+        if args.out:
+            Path(args.out).write_text(json.dumps(delta, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(json.dumps(delta, ensure_ascii=False, indent=2))
+        return 0
 
     if args.command == "scan-site":
         from .site_source import scan_site
@@ -128,7 +205,8 @@ def _main(argv=None):
             result = scan_project(
                 source.root,
                 out,
-                source_uri=source.display_source if source.is_remote else None
+                source_uri=source.display_source if source.is_remote else None,
+                exclude=tuple(args.exclude)
             )
             model = result["semantic_model"]
             finding_diff = None
@@ -139,6 +217,11 @@ def _main(argv=None):
                 if baseline_context.is_dir() or baseline_context.name in {"consumer-context.json", "consumer-context.v2.json"}:
                     semantic_delta = semantic_diff(load_context(baseline_context), load_context(Path(result["output"])))
                     (Path(result["output"]) / "semantic-diff.json").write_text(json.dumps(semantic_delta, indent=2), encoding="utf-8")
+                if baseline_context.is_dir() and (baseline_context / "engineering-model.json").is_file():
+                    from .engineering.model import engineering_diff
+                    from .engineering.service import load_model
+                    delta = engineering_diff(load_model(baseline_context), result["engineering_model"])
+                    (Path(result["output"]) / "engineering-diff.json").write_text(json.dumps(delta, ensure_ascii=False, indent=2), encoding="utf-8")
             summary = {
                 "source": source.display_source,
                 "remote": source.is_remote,

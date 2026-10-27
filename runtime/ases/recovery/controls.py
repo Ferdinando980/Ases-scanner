@@ -33,13 +33,17 @@ def recover_controls(root: Path, graph: FactGraph) -> FactGraph:
             continue
         rel=p.relative_to(root).as_posix()
         is_js = p.suffix.lower() in {".ts",".tsx",".js",".jsx",".mjs",".cjs",".mts",".cts"}
-        if is_js:
-            from ..scanners.javascript import MAX_BYTES
-            if p.stat().st_size > MAX_BYTES:
-                continue  # The parser's UNKNOWN coverage already records the limit.
         # AST ranges use the original UTF-8 bytes, including CRLF line endings.
         try:
+            if is_js:
+                from ..scanners.javascript import MAX_BYTES
+                if p.stat().st_size > MAX_BYTES:
+                    continue  # The parser's UNKNOWN coverage already records the limit.
             text=p.read_bytes().decode("utf-8",errors="strict" if is_js else "ignore")
+        except OSError:
+            from ..scanners.filesystem import source_unavailable
+            source_unavailable(root,p,graph)
+            continue
         except UnicodeError:
             continue
         if is_js:

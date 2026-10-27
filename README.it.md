@@ -6,13 +6,53 @@
 
 <p align="center"><a href="README.md">English</a> · <b>Italiano</b></p>
 
+Fra gli strumenti opzionali trovi la lettura con un modello locale e il confronto
+di osservazioni HTTP fornite. Le ipotesi restano separate dalle prove: una frase
+scritta bene non è ancora un test superato. [Uso e limiti](docs/LOCAL-INTERPRETATION.md).
+
+La versione sperimentale 1.13 legge anche gli export ReqView `.reqw`, i file ARFF
+e i requisiti in paragrafi HTML con ID. Conserva le frasi originali, distingue
+obblighi e raccomandazioni e mostra quando il tipo funzionale/non funzionale è
+solo suggerito. Se la fonte non lo dice, il requisito non prende una categoria
+per simpatia. Riconosce anche più vincoli e frasi senza soggetto, segnalandone i limiti; le funzioni interne, anche con nome privato o dichiarazione condizionale, restano distinte dagli ingressi pubblici. Un corpo vuoto viene segnalato come analizzato senza fatti ammessi: niente requisiti estratti dal cappello. [Risultati misurati e limiti](docs/ACCURACY.md).
+
 ## Perché l'ho costruito
+
+Per distinguere un pattern osservato da una possibile modifica, vedi
+[come leggere le proposte](docs/PATTERN-REVIEW.md). Un grande switch non è una
+richiesta automatica di trasformare il progetto in una collezione di classi.
 
 Alcuni progetti iniziano con un'idea e nessuna riga di codice. Altri arrivano con molto codice e un README avvistato per l'ultima volta tre refactoring fa. Volevo un modo utile di lavorare partendo da entrambe le situazioni.
 
 ASES unisce un **kit di ingegneria del software** e uno **scanner Python per comprendere software esistente**. Il kit dà agli assistenti di programmazione un metodo per requisiti, progettazione, implementazione, test e documentazione mantenuta. Lo scanner percorre la direzione inversa: dal codice ricostruisce struttura, relazioni e documentazione supportate dalle fonti, conservando le prove. Funziona localmente senza un LLM o una chiave API.
 
 Le due parti si incontrano nel lavoro quotidiano: capire cosa esiste, decidere cosa cambiare, implementarlo e verificare che codice, test e documenti continuino a raccontare la stessa storia. Possibilmente senza creare uno Strategy Factory Manager per correggere un `if` di due righe.
+
+## Provalo dal browser
+
+Con Python 3.11+ e un ambiente virtuale attivo, dalla radice del repository:
+
+```console
+python -m pip install -e "./runtime[documents]"
+ases ui
+```
+
+1. In **Nuova analisi**, scegli una cartella oppure incolla l’URL HTTPS di un repository pubblico.
+2. Avvia: vedi la fase effettiva e il tempo trascorso; puoi interrompere. Le opzioni permettono di escludere cartelle senza modificare il progetto.
+3. Apri **Risultati** per il riepilogo e i punti da verificare. **Mappa del codice** collega i simboli alle prove nei sorgenti.
+4. In **Documenti**, parti dalle **Operazioni e domande**: leggi cosa fa il codice e completa ciò che conosci. Il RAD distingue requisiti dichiarati e comportamenti ricostruiti; SDD e ODD descrivono architettura, firme e contratti. Puoi seguire le fonti e annotare le voci. **Pacchetto completo** conserva documenti e revisioni in uno ZIP riapribile. Può contenere testi estratti, frammenti di codice, percorsi e metadati: controllalo prima di condividerlo. **Rapporto ridotto** contiene conteggi aggregati e omissioni, senza testi, percorsi, sorgenti o note; non si può riaprire come analisi e i conteggi possono comunque rivelare caratteristiche del progetto.
+
+Per riaprire un pacchetto completo, estrailo e usa **Apri analisi salvata**. L’apertura mostra una sola fase e non ripete la scansione. Cambiare la lingua dell’interfaccia localizza navigazione e spiegazioni a schermo, ma non traduce i Markdown già salvati. Per rigenerarli in inglese dallo snapshot, usa `ases documents ... --language en`, come descritto nella [guida ai documenti](docs/DOCUMENTS.it.md).
+
+Niente caccia al tesoro fra dodici file per capire da dove cominciare. La UI è locale, in italiano e inglese, senza dipendenze frontend da installare. Git serve per i repository remoti. Le analisi non avviano il codice del progetto e non ne eseguono i test.
+
+**Altri strumenti** raccoglie confronti, siti, artefatti, riconciliazione, audit, esportazione, verifica delle capacità, misurazione sul corpus etichettato e pulizia degli output riconosciuti. **Metodo e template** permette di compilare e scaricare i documenti di sviluppo del kit. Requisiti e decisioni li fornisci tu: il codice non può testimoniare cosa avevano in mente gli stakeholder.
+
+Il progetto analizzato resta intatto. I report della UI sono temporanei: scaricali per conservarli. Un errore o un annullamento mantiene l’ultima analisi completata. Ctrl+C nel terminale chiude la sessione e rimuove i suoi file temporanei; chiudere soltanto la scheda non ferma il processo. La [guida all’interfaccia](docs/DESK.it.md) spiega ambiente, risultati, limiti e recupero dagli errori.
+
+[![La UI ASES con riepilogo, prossimi passi e limiti espliciti.](docs/images/ases-desk.jpg)](docs/images/ases-desk.jpg)
+
+Schermata reale sulla fixture pubblica `runtime/tests/fixture_spring`, usata per dimostrare il funzionamento. [Vedi anche il collegamento fra route, codice e prove](docs/images/ases-desk-evidence.jpg).
 
 ## Due parti, tre punti di partenza
 
@@ -48,6 +88,18 @@ Il kit comprende:
 Il metodo deriva anche da materiale universitario di ingegneria del software: fonti e rispettiva autorità sono dichiarate nella [mappa delle fonti](sources/SOURCE-MAP.md). I template danno una struttura; non rendono utile un documento vuoto per il solo fatto di esistere.
 
 Per adottarlo, colloca il kit nella directory `.ases` del progetto e integra l'adapter adatto nelle istruzioni dell'agente, conservando quelle già presenti. La [guida al metodo](docs/ENGINEERING-WORKFLOW.md) indica file, configurazione ed esempio operativo. Il companion storico `scripts/ases.py` offre suggerimenti di classificazione e controlli sulla presenza dei file; il ragionamento resta responsabilità dell'agente.
+
+## Requisiti: frasi, non una collezione di sigle
+
+Se il progetto ha già specifiche, ASES recupera le dichiarazioni disponibili: ID, testo e fonte, più attori, priorità e soglie dove riesce a separarli. Legge anche PDF testuali, fogli Excel, Word e documentazione HTML. Un file trovato ma non leggibile viene segnalato: non passa automaticamente per «documentazione analizzata».
+
+Nel **reverse engineering**, parte invece dai flussi supportati del codice: richiesta o chiamata pubblica, condizioni, risultati, errori e chiamate con possibili effetti. Da questi costruisce frasi di comportamento e le collega alle prove. Per esempio, può ricostruire che un handler controlla un titolo, dichiara un errore quando manca e prepara una risposta con il campo `id`. Non conclude che un ordine sia stato davvero salvato soltanto perché un metodo si chiama `save`.
+
+In **Documenti** puoi scegliere **Requisiti** per le dichiarazioni originali oppure **Requisiti ricostruiti dal codice** per questa interpretazione. Il RAD conserva entrambe le prospettive. L’ODD aggiunge firme, contratti disponibili e diagrammi; i documenti dei test distinguono definizioni, proposte e risultati importati. Le revisioni restano separate dalle fonti, vengono conservate nel browser per il progetto e incluse nel pacchetto completo; se una nuova scansione cambia il record, il conflitto resta visibile da rivedere.
+
+Le **Operazioni e domande** raggruppano ingressi con gli stessi handler e ti chiedono ciò che il codice non può sapere. Puoi dare un nome comprensibile al flusso, dichiarare il bisogno e indicare autore, ambito e criterio di accettazione. Confermare una lettura non adotta automaticamente un requisito; adottarlo non significa averlo verificato. Il RAD tiene separati questi contributi dalle specifiche originali. Il timbro «fatto» non è incluso nel pulsante Salva.
+
+L’interpretazione è statica e parziale, non una lettura universale del dominio. Dispatch dinamico, flussi Java complessi, diagrammi raster, intento degli stakeholder e correttezza runtime richiedono ancora una verifica. Il software può ricostruire una mappa; la telepatia resta fuori dalle dipendenze. La [guida ai documenti](docs/DOCUMENTS.it.md) spiega cosa viene letto, cosa viene inferito e come rigenerare il pacchetto.
 
 ## Comprendere codice esistente con lo scanner
 
@@ -86,6 +138,11 @@ Identità dell'entità, fingerprint del finding, identità dell'osservazione e i
 
 ## Eseguire una scansione
 
+Il percorso più diretto è `ases ui`. Per installazione dettagliata, automazioni e uso da terminale:
+
+<details>
+<summary>Ambiente e comandi CLI</summary>
+
 Dalla radice del repository, con Python 3.11 o successivo in un ambiente virtuale attivo:
 
 ```sh
@@ -121,12 +178,15 @@ ases scan /percorso/del/progetto --out next.ases --baseline current.ases
 
 Le query leggono le evidenze salvate senza riesaminare silenziosamente sorgenti mutabili. Il matching esatto per ID, nome o percorso espone le ambiguità. La paginazione della risposta è distinta dalla copertura dell'analisi. Le `entities` canoniche includono dichiarazioni che non compaiono nella proiezione legacy più piccola `components`: i due conteggi non sono equivalenti.
 
+</details>
+
 ## Cosa restituisce
 
 Una scansione dei sorgenti scrive:
 
 | Output | Scopo |
 |---|---|
+| `docs/REPORT.it.md`, `REPORT.md` (UI) | Prima lettura in italiano e inglese, con struttura, route, verifiche e prossimo passo |
 | `docs/SUMMARY.md`, `SYSTEM-OVERVIEW.md` | Guida alla revisione e panoramica ricostruita del sistema |
 | `docs/RAD.md`, `SDD.md`, `ODD.md` | Ricostruzione di comportamento, architettura e object design dalle evidenze di implementazione |
 | `docs/TESTING.md`, `TRACEABILITY.yaml`, `CONTROLS.yaml`, `QUALITY.md` | Baseline dei test, collegamenti, controlli osservati e limiti di qualità/copertura |
@@ -187,7 +247,7 @@ ASES offre procedure generiche di sviluppo ed evidenze strutturali. Altri strume
 
 ## Verifiche e stato attuale
 
-Runtime **1.9.0**, standard di sviluppo **0.3**. L'ultima suite verificata su Windows/Python 3.14.7 conta **241 test passati, 1 saltato**; quel caso richiede il permesso di creare link simbolici. Il [benchmark di accuratezza](docs/ACCURACY.md) copre 16 casi sintetici con 39 etichette esplicite e produce report HTML, Markdown e JSON ispezionabili. Passano tutti i 16 casi e i controlli sui cambi di posizione. La revisione indipendente delle etichette è ancora da completare: è un corpus di regressione, non una stima di accuratezza su qualsiasi repository.
+Questa versione di sviluppo è **sperimentale** e dichiara Python 3.11 o successivo. Sono stati provati Windows, Linux (anche sotto WSL2) e macOS; versioni, test saltati e verifiche ancora aperte sono nella [matrice delle verifiche](docs/SUPPORT.md). I comandi sono in [TESTING.md](TESTING.md). La [guida all’accuratezza](docs/ACCURACY.md) distingue regressioni sintetiche e nuove misure esterne: queste ultime mostrano lacune sostanziali nel recupero della prosa libera e nella classificazione funzionale/non funzionale. Conservare categorie già fornite è una prova diversa. Revisione indipendente e utilità per gli utenti restano da misurare.
 
 Parti dalla [guida al metodo](docs/ENGINEERING-WORKFLOW.md) per lo sviluppo, dalla [guida CLI](runtime/README.md) per i comandi e da [TESTING.md](TESTING.md) per riprodurre le verifiche. [Terminologia delle evidenze](EPISTEMOLOGY.md), [regole dei pattern](PATTERN-RULES.md) e [contratti dei consumer](integrations/CONSUMER-CONTRACT.md) chiariscono interpretazione e integrazione. Dispatch dinamico, middleware globali, route servlet, client/bus personalizzati ed esecuzione runtime restano limiti dei rispettivi metodi. Zero opportunità speculative è un risultato valido.
 

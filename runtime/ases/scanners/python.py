@@ -52,6 +52,40 @@ def _parameters(node):
     return {arg.arg for arg in [*args.posonlyargs, *args.args, *args.kwonlyargs, args.vararg, args.kwarg] if arg}
 
 
+def scoped_function_declarations(statements, context=()):
+    """Index conditional declarations without asserting their runtime availability.
+
+    Stop at callable/class boundaries: descendants belong to their own scope.
+    Context is source syntax, not a solved predicate or an execution trace.
+    """
+    for statement in statements:
+        if isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            yield statement, context
+        elif isinstance(statement, ast.ClassDef):
+            continue
+        elif isinstance(statement, ast.If):
+            for branch, body in (("then", statement.body), ("else", statement.orelse)):
+                clause = {"kind": "if", "expression": ast.unparse(statement.test), "branch": branch,
+                          "line": statement.lineno}
+                yield from scoped_function_declarations(body, (*context, clause))
+        else:
+            # Loops, try handlers/finally, with and match arms are inventoried,
+            # but their reachability, exception dispatch and iteration are unknown.
+            for field_name, value in ast.iter_fields(statement):
+                if not isinstance(value, list):
+                    continue
+                for child in value:
+                    if isinstance(child, (ast.ExceptHandler, ast.match_case)):
+                        body = child.body
+                    elif isinstance(child, ast.stmt):
+                        body = [child]
+                    else:
+                        continue
+                    clause = {"kind": type(statement).__name__, "branch": field_name,
+                              "line": statement.lineno}
+                    yield from scoped_function_declarations(body, (*context, clause))
+
+
 def _flask_bindings(tree, inherited_imports=None, inherited_bindings=None):
     """Literal Flask declarations in one lexical scope; target code is never executed."""
     imports = dict(inherited_imports or {})
@@ -129,6 +163,10 @@ def scan_python(root: Path) -> FactGraph:
         rel = p.relative_to(root).as_posix()
         try:
             tree = ast.parse(p.read_text(encoding="utf-8", errors="ignore"), filename=rel)
+        except OSError:
+            from .filesystem import source_unavailable
+            source_unavailable(root,p,graph)
+            continue
         except SyntaxError:
             graph.coverage[rel] = {"status": "UNKNOWN", "basis": "Python syntax error", "omitted_count": None}
             graph.unknowns.append({"path": rel, "reason": "python_syntax_error", "state": "UNKNOWN"})
@@ -182,28 +220,38 @@ def scan_python(root: Path) -> FactGraph:
                     graph.add_edge(Edge(mid,fid,"declares",[f"{rel}:{node.lineno}"]))
                     _decorator_semantics(graph, fid, node.decorator_list, rel, node.lineno, flask_bindings)
 
-        def nested_functions(parent, owner, qualified, inherited_bindings, inherited_imports):
+        def nested_functions(parent, owner, qualified, inherited_bindings, inherited_imports, module_scope=False, inherited_context=()):
             bindings, imports = _flask_bindings(parent, inherited_imports, inherited_bindings)
             occurrences = Counter()
-            for child in parent.body:
-                if not isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            for child, immediate_context in scoped_function_declarations(parent.body):
+                declaration_context = (*inherited_context, *immediate_context)
+                if module_scope and not declaration_context:
                     continue
-                name = qualified + "." + child.name
+                name = qualified + "." + child.name if qualified else child.name
                 ordinal = occurrences[child.name]
                 occurrences[child.name] += 1
-                fid = f"function:{module_name}:{name}" + (f":occurrence:{ordinal}" if ordinal else "")
+                suffix = f":declaration:{child.lineno}" if declaration_context else (f":occurrence:{ordinal}" if ordinal else "")
+                fid = f"function:{module_name}:{name}" + suffix
                 function_nodes[(rel, id(child))] = fid
                 graph.add_node(Node(
                     fid, "function", child.name, rel,
-                    {"owner": owner, "identity_scope": qualified, "is_nested": True,
+                    {"owner": owner, "identity_scope": qualified, "is_nested": not module_scope,
+                     "conditional_declaration": bool(declaration_context), "declaration_context": list(declaration_context),
                      "decorators": [_name(d) for d in child.decorator_list],
                      "async": isinstance(child, ast.AsyncFunctionDef)},
                     Evidence(evidence=[f"{rel}:{child.lineno}"])
                 ))
                 graph.add_edge(Edge(owner, fid, "declares", [f"{rel}:{child.lineno}"]))
-                _decorator_semantics(graph, fid, child.decorator_list, rel, child.lineno, bindings, name)
-                nested_functions(child, fid, name, bindings, imports)
+                if declaration_context:
+                    graph.unknowns.append({'path': rel, 'line': child.lineno, 'entity_ref': fid,
+                                           'reason': 'python_conditional_declaration_unresolved',
+                                           'state': 'UNKNOWN',
+                                           'basis': 'Body indexed; runtime availability and conditional registration unresolved'})
+                if not declaration_context:
+                    _decorator_semantics(graph, fid, child.decorator_list, rel, child.lineno, bindings, name)
+                nested_functions(child, fid, name, bindings, imports, inherited_context=declaration_context)
 
+        nested_functions(tree, mid, "", flask_bindings, flask_imports, module_scope=True)
         for node in tree.body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 nested_functions(node, function_nodes[(rel, id(node))], node.name, flask_bindings, flask_imports)
@@ -242,14 +290,18 @@ def scan_python(root: Path) -> FactGraph:
     name_to_node = {}
     nodes_by_id = {}
     for n in graph.nodes:
-        if n.kind in {"class","entity","function","method","module"} and not n.metadata.get("is_nested"):
+        if n.kind in {"class","entity","function","method","module"} and not n.metadata.get("is_nested") and not n.metadata.get("conditional_declaration"):
             name_to_node.setdefault(n.name, []).append(n.id)
         nodes_by_id[n.id] = n
     lexical_symbols = {}
+    conditional_symbols = set()
     for edge in graph.edges:
         if edge.relation == "declares" and edge.target in nodes_by_id:
             target = nodes_by_id[edge.target]
-            lexical_symbols.setdefault((edge.source, target.name), []).append(target.id)
+            if target.metadata.get("conditional_declaration"):
+                conditional_symbols.add((edge.source, target.name))
+            else:
+                lexical_symbols.setdefault((edge.source, target.name), []).append(target.id)
 
     for rel, tree in parsed.items():
         mid = module_nodes[rel]
@@ -309,6 +361,11 @@ def scan_python(root: Path) -> FactGraph:
                             candidates = []
                             graph.unknowns.append({"path": rel, "line": node.lineno, "reason": "python_shadowed_call", "state": "UNKNOWN"})
                             break
+                        if (owner, simple) in conditional_symbols:
+                            candidates = []
+                            graph.unknowns.append({'path': rel, 'line': node.lineno,
+                                                   'reason': 'python_conditional_call_binding_unresolved', 'state': 'UNKNOWN'})
+                            break
                         if (owner, simple) in lexical_symbols:
                             candidates = lexical_symbols[(owner, simple)]
                             break
@@ -319,6 +376,8 @@ def scan_python(root: Path) -> FactGraph:
                         graph.add_edge(Edge(self.scope[-1],target,"calls",[f"{rel}:{getattr(node,'lineno',0)}"]))
                 self.generic_visit(node)
         Visitor().visit(tree)
+        from .python_http import recover_dispatch_tables
+        recover_dispatch_tables(tree, graph, rel, ".".join(Path(rel).with_suffix("").parts), function_nodes)
 
     return graph
 

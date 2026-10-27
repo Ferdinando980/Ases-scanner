@@ -24,7 +24,7 @@ def _hints(model):
 
 def test_state_and_strategy_dispatch_use_precision_thresholds(tmp_path):
     model=_model(tmp_path,'dispatch',{
-        'StateGame.java':'class Game { void run(State state) { switch (state) { case A: a(); break; case B: b(); break; case C: c(); break; } } }',
+        'StateGame.java':'class Game { void run(State state) { switch (state) { case A: a(); break; case B: b(); break; case C: c(); break; } } void replay(State state) { switch (state) { case A: a(); break; case B: b(); break; case C: c(); break; } } }',
         'ModeGame.java':'class ModeGame { void run(Mode mode) { switch (mode) { case A: a(); break; case B: b(); break; case C: c(); break; } } }',
     })
     assert any(x['pattern']=='State' for x in _opportunities(model))

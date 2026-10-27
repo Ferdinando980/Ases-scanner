@@ -11,7 +11,10 @@ ANNOT_RE = re.compile(r'@([A-Za-z_][\w.]*)\s*(?:\(([^)]*)\))?')
 TYPE_RE = re.compile(
     r'(?P<anns>(?:@\w+(?:\([^)]*\))?\s*)*)'
     r'(?:(?:public|protected|private|abstract|final|static|sealed|non-sealed)\s+)*'
-    r'(?P<kind>class|interface|enum|record)\s+(?P<name>[A-Za-z_]\w*)'
+    # '$' is a valid Java identifier character (and the whole identifier in
+    # Vavr's utility type named '$'). Keep this declaration index aligned with
+    # the Java grammar used for method bodies and API recovery.
+    r'(?P<kind>class|interface|enum|record)\s+(?P<name>[A-Za-z_$][\w$]*)'
     r'(?:\s+extends\s+(?P<extends>[A-Za-z_][\w.<>?, ]*))?'
     r'(?:\s+implements\s+(?P<implements>[A-Za-z_][\w.<>?, ]*))?'
 )
@@ -88,15 +91,83 @@ def _classify_plain_type(name: str, pkg_name: str, rel: str, ann_names: list[str
 def _creation_targets(body: str) -> list[str]:
     return sorted(set(re.findall(r'\bnew\s+([A-Za-z_]\w*)\s*\(', body)))
 
+def _java_lexical_spans(text):
+    """Return comment and literal spans without treating comment markers in strings as comments."""
+    spans = []
+    index = 0
+    while index < len(text):
+        if text.startswith("//", index):
+            end = text.find("\n", index + 2)
+            end = len(text) if end < 0 else end
+            spans.append((index, end, "comment"))
+            index = end
+            continue
+        if text.startswith("/*", index):
+            close = text.find("*/", index + 2)
+            end = len(text) if close < 0 else close + 2
+            spans.append((index, end, "comment"))
+            index = end
+            continue
+        if text.startswith('"""', index):
+            end = index + 3
+            while end < len(text):
+                if text.startswith('"""', end):
+                    slashes, cursor = 0, end - 1
+                    while cursor >= index and text[cursor] == "\\":
+                        slashes += 1
+                        cursor -= 1
+                    if slashes % 2 == 0:
+                        end += 3
+                        break
+                end += 1
+            spans.append((index, end, "literal"))
+            index = end
+            continue
+        if text[index] in {"\"", "'"}:
+            quote = text[index]
+            end = index + 1
+            while end < len(text):
+                if text[end] == "\\":
+                    end += 2
+                    continue
+                if text[end] == quote:
+                    end += 1
+                    break
+                end += 1
+            spans.append((index, min(end, len(text)), "literal"))
+            index = end
+            continue
+        index += 1
+    return spans
+
+def _mask_java_comments(text, spans=None):
+    spans = spans if spans is not None else _java_lexical_spans(text)
+    chars = list(text)
+    for start, end, kind in spans:
+        if kind == "comment":
+            for index in range(start, end):
+                if chars[index] not in "\r\n":
+                    chars[index] = " "
+    return "".join(chars)
+
 def _method_matches(text):
-    non_code = [(m.start(), m.end()) for m in NON_CODE_RE.finditer(text)]
-    matches = {m.start("name"): m for m in METHOD_RE.finditer(text)}
-    for match in JUNIT_METHOD_RE.finditer(text):
+    # Keep offsets and line numbers intact while allowing declarations with a
+    # trailing comment after an annotation (for example `@Override // note`).
+    # Matching the original text misses the annotation and shifts declaration
+    # identity to the following modifier line.
+    spans = _java_lexical_spans(text)
+    literals = [(start, end) for start, end, kind in spans if kind == "literal"]
+    masked = _mask_java_comments(text, spans)
+    def name_is_literal(match):
+        offset = match.start("name")
+        return any(start <= offset < end for start, end in literals)
+    matches = {m.start("name"): m for m in METHOD_RE.finditer(masked) if not name_is_literal(m)}
+    for match in JUNIT_METHOD_RE.finditer(masked):
+        if name_is_literal(match):
+            continue
         if any(name in TEST_ANN for name, _ in _anns(match.group("anns"))):
             matches[match.start("name")] = match
-    for _, match in sorted(matches.items()):
-        if not any(start <= match.start() < end for start, end in non_code):
-            yield match
+    yield from (match for _, match in sorted(matches.items()))
 
 
 def scan_java(root: Path) -> FactGraph:
@@ -106,12 +177,21 @@ def scan_java(root: Path) -> FactGraph:
 
     for p in [p for p in iter_owned_files(root) if p.suffix == ".java"]:
         rel = p.relative_to(root).as_posix()
-        text = p.read_text(encoding="utf-8", errors="ignore")
+        try:
+            text = p.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            from .filesystem import source_unavailable
+            source_unavailable(root,p,graph)
+            continue
         pkg = PACKAGE_RE.search(text)
         pkg_name = pkg.group(1) if pkg else ""
         imports = IMPORT_RE.findall(text)
+        non_code = [(m.start(), m.end()) for m in NON_CODE_RE.finditer(text)]
 
         for tm in TYPE_RE.finditer(text):
+            # Prose such as "this class enforces limits" is not a declaration.
+            if any(start <= tm.start("kind") < end for start, end in non_code):
+                continue
             block = balanced_block(text, tm.end())
             if not block:
                 continue
@@ -161,6 +241,9 @@ def scan_java(root: Path) -> FactGraph:
         for mm in _method_matches(body):
             # only methods whose declaration begins at class top level approximately
             absolute = bstart + mm.start()
+            # Nested declarations are visited under their own parsed type.
+            if body[:mm.start()].count("{") - body[:mm.start()].count("}") != 1:
+                continue
             method_name = mm.group("name")
             mid = f"method:{fqcn}#{method_name}:{line_of(text,absolute)}"
             anns = _anns(mm.group("anns"))
@@ -207,5 +290,73 @@ def scan_java(root: Path) -> FactGraph:
                 simple = re.split(r'[<\s]',token.strip())[0].split(".")[-1]
                 if simple in type_index:
                     graph.add_edge(Edge(nid,type_index[simple],"implements",[rel]))
+
+    # Recover method bodies the regex inventory intentionally cannot assign:
+    # implicit-public interface defaults, enum-constant bodies, and bounded
+    # package-private methods declared in ordinary classes.
+    from .java_syntax import parse as parse_java, walk as walk_java, field as java_field, text as java_text
+    for p in [p for p in iter_owned_files(root) if p.suffix == ".java"]:
+        rel = p.relative_to(root).as_posix()
+        try:
+            source = p.read_text(encoding="utf-8", errors="ignore")
+            syntax = parse_java(source)
+        except (OSError, ValueError):
+            continue
+        for declaration in (n for n in walk_java(syntax) if n.type == "method_declaration"):
+            name_node = java_field(declaration, "name")
+            name = java_text(name_node)
+            if not name_node or not name:
+                continue
+            line = declaration.start_point.row + 1
+            ancestors = []
+            current = declaration.parent
+            while current:
+                if current.type in {"class_declaration", "interface_declaration", "enum_declaration", "record_declaration", "enum_constant"}:
+                    ancestors.append(current)
+                current = current.parent
+            enum_constant = next((n for n in ancestors if n.type == "enum_constant"), None)
+            owner_type = next((n for n in ancestors if n.type in {"class_declaration", "interface_declaration", "enum_declaration", "record_declaration"}), None)
+            if not owner_type:
+                continue
+            owner_name = java_text(java_field(owner_type, "name"))
+            package = PACKAGE_RE.search(source)
+            package_name = package.group(1) if package else ""
+            owner_id = f"type:{package_name + '.' if package_name else ''}{owner_name}"
+            if owner_id not in {n.id for n in graph.nodes}:
+                continue
+            modifiers = java_text(next((c for c in declaration.named_children if c.type == "modifiers"), None))
+            implicit_interface = owner_type.type == "interface_declaration" and "private" not in modifiers
+            body_node = java_field(declaration, "body")
+            modifier_node = next((c for c in declaration.named_children if c.type == "modifiers"), None)
+            explicit_visibility = any(n.type in {"public", "protected", "private"}
+                                      for n in walk_java(modifier_node)) if modifier_node else False
+            package_private_class = (owner_type.type == "class_declaration" and body_node is not None
+                                     and not explicit_visibility)
+            if not enum_constant and not implicit_interface and not package_private_class:
+                continue
+            # Existing explicit declarations retain their legacy graph IDs.
+            if any(n.kind == "method" and n.path == rel and n.name == name and f"{rel}:{line}" in n.provenance.evidence for n in graph.nodes):
+                continue
+            constant_name = java_text(java_field(enum_constant, "name")) if enum_constant else ""
+            owner_chain = []
+            for item in reversed(ancestors):
+                if item.type in {"class_declaration", "interface_declaration", "enum_declaration", "record_declaration"}:
+                    chain_name = java_text(java_field(item, "name"))
+                    if chain_name:
+                        owner_chain.append(chain_name)
+            identity_owner = ".".join(owner_chain) if owner_chain else owner_name
+            if enum_constant:
+                identity_owner += f".{constant_name}"
+            method_id = f"method:{package_name + '.' if package_name else ''}{identity_owner}#{name}:{line}"
+            visibility = ("package-private" if package_private_class else "public" if implicit_interface else next(
+                (value for value in ("private", "protected", "public") if value in modifiers), "undeclared"))
+            graph.add_node(Node(method_id, "method", name, rel, {
+                "owner": owner_id, "owner_chain": identity_owner, "visibility": visibility,
+                "return_type": java_text(java_field(declaration, "type")),
+                "params": java_text(java_field(declaration, "parameters")),
+                "annotations": [], "is_test_code": _is_test_path(rel),
+                "start_byte": declaration.start_byte, "end_byte": declaration.end_byte,
+            }, Evidence(evidence=[f"{rel}:{line}"])))
+            graph.add_edge(Edge(owner_id, method_id, "declares", [f"{rel}:{line}"]))
 
     return graph

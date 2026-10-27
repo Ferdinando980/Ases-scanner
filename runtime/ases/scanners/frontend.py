@@ -20,14 +20,18 @@ def scan_frontend(root: Path) -> FactGraph:
         if meta['scope']!='frontend' or meta['role']!='OWNED_SOURCE': continue
         ext=p.suffix.lower()
         if ext not in SCRIPT_EXTS|TEMPLATE_EXTS: continue
-        if ext in SCRIPT_EXTS:
-            from .javascript import MAX_BYTES
-            if p.stat().st_size > MAX_BYTES:
-                graph.coverage[rel] = {'status': 'UNKNOWN', 'basis': 'source_byte_limit', 'omitted_count': None}
-                graph.unknowns.append({'path': rel, 'reason': 'source_byte_limit', 'state': 'UNKNOWN'})
-                continue
         try:
+            if ext in SCRIPT_EXTS:
+                from .javascript import MAX_BYTES
+                if p.stat().st_size > MAX_BYTES:
+                    graph.coverage[rel] = {'status': 'UNKNOWN', 'basis': 'source_byte_limit', 'omitted_count': None}
+                    graph.unknowns.append({'path': rel, 'reason': 'source_byte_limit', 'state': 'UNKNOWN'})
+                    continue
             text=p.read_bytes().decode('utf-8',errors='strict' if ext in SCRIPT_EXTS else 'ignore')
+        except OSError:
+            from .filesystem import source_unavailable
+            source_unavailable(root,p,graph)
+            continue
         except UnicodeError:
             graph.coverage[rel] = {'status': 'UNKNOWN', 'basis': 'invalid_utf8', 'omitted_count': None}
             graph.unknowns.append({'path': rel, 'reason': 'invalid_utf8', 'state': 'UNKNOWN'})

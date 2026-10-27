@@ -1,0 +1,1692 @@
+{
+  "schema": "ases-document-corpus/1",
+  "label_review": "Manual same-session labels frozen before R1/R2 changes; independent review pending",
+  "limitations": [
+    "Development/regression corpus: 24 controlled variations of one guard/three-exit family, not independent projects.",
+    "Java intentionally retains the same path oracle despite partial current recovery. Discrepancies remain visible.",
+    "No target code is executed. Java Map.of output shape is not scored.",
+    "No user comprehension or independent validation is claimed."
+  ],
+  "cases": [
+    {
+      "id": "python-early-exit",
+      "files": {
+        "api.py": "def classify(mode, value, store):\n    if mode < 0:\n        raise ValueError('mode')\n    if mode == 0:\n        return {'empty': value}\n    if mode == 1:\n        return {'single': value}\n    store.save(value)\n    return {'result': value}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{'empty': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{'single': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{'result': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "ValueError('mode')",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "python-else-chain",
+      "files": {
+        "api.py": "def classify(mode, value, store):\n    if mode < 0:\n        raise ValueError('mode')\n    elif mode == 0:\n        return {'empty': value}\n    elif mode == 1:\n        return {'single': value}\n    store.save(value)\n    return {'result': value}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{'empty': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{'single': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{'result': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "ValueError('mode')",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "python-nested-guard",
+      "files": {
+        "api.py": "def classify(mode, value, store):\n    if mode < 0:\n        raise ValueError('mode')\n    else:\n        if mode == 0:\n            return {'empty': value}\n        if mode == 1:\n            return {'single': value}\n        store.save(value)\n        return {'result': value}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{'empty': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{'single': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{'result': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "ValueError('mode')",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "python-conditional-return",
+      "files": {
+        "api.py": "def classify(mode, value, store):\n    if mode < 0:\n        raise ValueError('mode')\n    if mode == 0:\n        return {'empty': value}\n    store.save(value)\n    return {'single': value} if mode == 1 else {'result': value}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{'empty': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{'single': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{'result': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "ValueError('mode')",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "python-short-circuit",
+      "files": {
+        "api.py": "def classify(mode, value, store):\n    if mode < 0:\n        raise ValueError('mode')\n    if mode == 0:\n        return {'empty': value}\n    if mode == 1:\n        return {'single': value}\n    mode == 2 and store.save(value)\n    return {'result': value}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{'empty': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{'single': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{'result': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "ValueError('mode')",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)",
+                "mode == 2"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "python-typed",
+      "files": {
+        "api.py": "def classify(mode: int, value: str, store) -> dict:\n    if mode < 0:\n        raise ValueError('mode')\n    if mode == 0:\n        return {'empty': value}\n    if mode == 1:\n        return {'single': value}\n    store.save(value)\n    return {'result': value}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{'empty': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{'single': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{'result': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "ValueError('mode')",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "python-unreachable",
+      "files": {
+        "api.py": "def classify(mode, value, store):\n    if mode < 0:\n        raise ValueError('mode')\n    if mode == 0:\n        return {'empty': value}\n    if mode == 1:\n        return {'single': value}\n    store.save(value)\n    return {'result': value}\n    store.delete(value)\n    raise RuntimeError('dead')\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{'empty': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{'single': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{'result': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "ValueError('mode')",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "python-nested-negative",
+      "files": {
+        "api.py": "def classify(mode, value, store):\n    def decoy():\n        store.delete(value)\n        raise RuntimeError('nested')\n    if mode < 0:\n        raise ValueError('mode')\n    if mode == 0:\n        return {'empty': value}\n    if mode == 1:\n        return {'single': value}\n    store.save(value)\n    return {'result': value}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{'empty': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{'single': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{'result': value}",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "ValueError('mode')",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "javascript-early-exit",
+      "files": {
+        "api.js": "export function classify(mode,value,store){\nif(mode < 0) throw new Error('mode');\nif(mode == 0) return {empty:value};\nif(mode == 1) return {single:value};\nstore.save(value);\nreturn {result:value};\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{empty:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "(mode == 0)"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{single:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "(mode == 1)"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{result:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "not ((mode == 1))"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "throw new Error('mode');",
+              "conditions": [
+                "(mode < 0)"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "not ((mode == 1))"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "javascript-else-chain",
+      "files": {
+        "api.js": "export function classify(mode,value,store){\nif(mode < 0) throw new Error('mode');\nelse if(mode == 0) return {empty:value};\nelse if(mode == 1) return {single:value};\nstore.save(value);\nreturn {result:value};\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{empty:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "(mode == 0)"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{single:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "(mode == 1)"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{result:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "not ((mode == 1))"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "throw new Error('mode');",
+              "conditions": [
+                "(mode < 0)"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "not ((mode == 1))"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "javascript-nested-guard",
+      "files": {
+        "api.js": "export function classify(mode,value,store){\nif(mode < 0) {throw new Error('mode');} else {\nif(mode == 0) return {empty:value};\nif(mode == 1) return {single:value};\nstore.save(value);\nreturn {result:value};\n}\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{empty:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "(mode == 0)"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{single:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "(mode == 1)"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{result:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "not ((mode == 1))"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "throw new Error('mode');",
+              "conditions": [
+                "(mode < 0)"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "not ((mode == 1))"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "javascript-conditional-return",
+      "files": {
+        "api.js": "export function classify(mode,value,store){\nif(mode < 0) throw new Error('mode');\nif(mode == 0) return {empty:value};\nstore.save(value);\nreturn mode == 1 ? {single:value} : {result:value};\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{empty:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "(mode == 0)"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{single:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "mode == 1"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{result:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "not (mode == 1)"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "throw new Error('mode');",
+              "conditions": [
+                "(mode < 0)"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "javascript-short-circuit",
+      "files": {
+        "api.js": "export function classify(mode,value,store){\nif(mode < 0) throw new Error('mode');\nif(mode == 0) return {empty:value};\nif(mode == 1) return {single:value};\nmode == 2 && store.save(value);\nreturn {result:value};\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{empty:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "(mode == 0)"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{single:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "(mode == 1)"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{result:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "not ((mode == 1))"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "throw new Error('mode');",
+              "conditions": [
+                "(mode < 0)"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "not ((mode == 1))",
+                "mode == 2"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "javascript-typed",
+      "files": {
+        "api.ts": "export function classify(mode:number,value:string,store:Store):object{\nif(mode < 0) throw new Error('mode');\nif(mode == 0) return {empty:value};\nif(mode == 1) return {single:value};\nstore.save(value);\nreturn {result:value};\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{empty:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "(mode == 0)"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{single:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "(mode == 1)"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{result:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "not ((mode == 1))"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "throw new Error('mode');",
+              "conditions": [
+                "(mode < 0)"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "not ((mode == 1))"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "javascript-unreachable",
+      "files": {
+        "api.js": "export function classify(mode,value,store){\nif(mode < 0) throw new Error('mode');\nif(mode == 0) return {empty:value};\nif(mode == 1) return {single:value};\nstore.save(value);\nreturn {result:value};\nstore.delete(value); throw new Error('dead');\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{empty:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "(mode == 0)"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{single:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "(mode == 1)"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{result:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "not ((mode == 1))"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "throw new Error('mode');",
+              "conditions": [
+                "(mode < 0)"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "not ((mode == 1))"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "javascript-nested-negative",
+      "files": {
+        "api.js": "export function classify(mode,value,store){\nfunction decoy(){store.delete(value);throw new Error('nested');}\nif(mode < 0) throw new Error('mode');\nif(mode == 0) return {empty:value};\nif(mode == 1) return {single:value};\nstore.save(value);\nreturn {result:value};\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{empty:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "(mode == 0)"
+              ],
+              "output_fields": [
+                "empty"
+              ]
+            },
+            {
+              "expression": "{single:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "(mode == 1)"
+              ],
+              "output_fields": [
+                "single"
+              ]
+            },
+            {
+              "expression": "{result:value}",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "not ((mode == 1))"
+              ],
+              "output_fields": [
+                "result"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "throw new Error('mode');",
+              "conditions": [
+                "(mode < 0)"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not ((mode < 0))",
+                "not ((mode == 0))",
+                "not ((mode == 1))"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "java-early-exit",
+      "files": {
+        "Api.java": "import java.util.Map;\npublic class Api {\npublic Map<String,Object> classify(int mode,String value,Store store){\nif(mode < 0) throw new IllegalArgumentException(\"mode\");\nif(mode == 0) return Map.of(\"empty\", value);\nif(mode == 1) return Map.of(\"single\", value);\nstore.save(value);\nreturn Map.of(\"result\", value);\n}\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "Map.of(\"empty\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"single\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"result\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": []
+            }
+          ],
+          "errors": [
+            {
+              "expression": "new IllegalArgumentException(\"mode\")",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "java-else-chain",
+      "files": {
+        "Api.java": "import java.util.Map;\npublic class Api {\npublic Map<String,Object> classify(int mode,String value,Store store){\nif(mode < 0) throw new IllegalArgumentException(\"mode\");\nelse if(mode == 0) return Map.of(\"empty\", value);\nelse if(mode == 1) return Map.of(\"single\", value);\nstore.save(value);\nreturn Map.of(\"result\", value);\n}\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "Map.of(\"empty\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"single\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"result\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": []
+            }
+          ],
+          "errors": [
+            {
+              "expression": "new IllegalArgumentException(\"mode\")",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "java-nested-guard",
+      "files": {
+        "Api.java": "import java.util.Map;\npublic class Api {\npublic Map<String,Object> classify(int mode,String value,Store store){\nif(mode < 0) {throw new IllegalArgumentException(\"mode\");} else {\nif(mode == 0) return Map.of(\"empty\", value);\nif(mode == 1) return Map.of(\"single\", value);\nstore.save(value);\nreturn Map.of(\"result\", value);\n}\n}\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "Map.of(\"empty\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"single\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"result\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": []
+            }
+          ],
+          "errors": [
+            {
+              "expression": "new IllegalArgumentException(\"mode\")",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "java-conditional-return",
+      "files": {
+        "Api.java": "import java.util.Map;\npublic class Api {\npublic Map<String,Object> classify(int mode,String value,Store store){\nif(mode < 0) throw new IllegalArgumentException(\"mode\");\nif(mode == 0) return Map.of(\"empty\", value);\nstore.save(value);\nreturn mode == 1 ? Map.of(\"single\", value) : Map.of(\"result\", value);\n}\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "Map.of(\"empty\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"single\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"result\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": []
+            }
+          ],
+          "errors": [
+            {
+              "expression": "new IllegalArgumentException(\"mode\")",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "java-short-circuit",
+      "files": {
+        "Api.java": "import java.util.Map;\npublic class Api {\npublic Map<String,Object> classify(int mode,String value,Store store){\nif(mode < 0) throw new IllegalArgumentException(\"mode\");\nif(mode == 0) return Map.of(\"empty\", value);\nif(mode == 1) return Map.of(\"single\", value);\nif(mode == 2) store.save(value);\nreturn Map.of(\"result\", value);\n}\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "Map.of(\"empty\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"single\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"result\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": []
+            }
+          ],
+          "errors": [
+            {
+              "expression": "new IllegalArgumentException(\"mode\")",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)",
+                "mode == 2"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "java-typed",
+      "files": {
+        "Api.java": "import java.util.Map;\npublic class Api {\npublic Map<String,Object> classify(int mode,String value,Store store){\nfinal String literal=\"return fake; throw bad;\";\nif(mode < 0) throw new IllegalArgumentException(\"mode\");\nif(mode == 0) return Map.of(\"empty\", value);\nif(mode == 1) return Map.of(\"single\", value);\nstore.save(value);\nreturn Map.of(\"result\", value);\n}\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "Map.of(\"empty\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"single\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"result\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": []
+            }
+          ],
+          "errors": [
+            {
+              "expression": "new IllegalArgumentException(\"mode\")",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "java-unreachable",
+      "files": {
+        "Api.java": "import java.util.Map;\npublic class Api {\npublic Map<String,Object> classify(int mode,String value,Store store){\nif(mode < 0) throw new IllegalArgumentException(\"mode\");\nif(mode == 0) return Map.of(\"empty\", value);\nif(mode == 1) return Map.of(\"single\", value);\nstore.save(value);\nreturn Map.of(\"result\", value);\nstore.delete(value); throw new RuntimeException(\"dead\");\n}\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "Map.of(\"empty\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"single\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"result\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": []
+            }
+          ],
+          "errors": [
+            {
+              "expression": "new IllegalArgumentException(\"mode\")",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "java-nested-negative",
+      "files": {
+        "Api.java": "import java.util.Map;\npublic class Api {\npublic Map<String,Object> classify(int mode,String value,Store store){\n// return Map.of(\"decoy\", value); throw new RuntimeException(\"nested\");\nif(mode < 0) throw new IllegalArgumentException(\"mode\");\nif(mode == 0) return Map.of(\"empty\", value);\nif(mode == 1) return Map.of(\"single\", value);\nstore.save(value);\nreturn Map.of(\"result\", value);\n}\n}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "classify"
+          },
+          "oracle": "Manual branch inspection: negative mode throws; zero and one return their distinct objects; remaining path may call save and returns result. No target execution. Java map field shape is outside this oracle; path associations remain required.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "Map.of(\"empty\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "mode == 0"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"single\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "mode == 1"
+              ],
+              "output_fields": []
+            },
+            {
+              "expression": "Map.of(\"result\", value)",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ],
+              "output_fields": []
+            }
+          ],
+          "errors": [
+            {
+              "expression": "new IllegalArgumentException(\"mode\")",
+              "conditions": [
+                "mode < 0"
+              ]
+            }
+          ],
+          "effects": [
+            {
+              "callee": "store.save",
+              "conditions": [
+                "not (mode < 0)",
+                "not (mode == 0)",
+                "not (mode == 1)"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

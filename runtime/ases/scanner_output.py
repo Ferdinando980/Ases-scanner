@@ -32,6 +32,7 @@ def scanner_findings(model: dict) -> dict:
         "file_coverage": model.get("file_coverage", {}),
         "analysis_profile": model.get("analysis_profile"),
         "source_classification":model.get("source_classification",{}),
+        **({"design_review_coverage":model["design_review_coverage"]} if "design_review_coverage" in model else {}),
         "findings":findings,
         "hints":hints,
         "suppressed":suppressed,
@@ -64,7 +65,8 @@ def _row(item: dict) -> dict:
         "assumptions":item.get("assumptions",[]),
         "signals":item.get("signals",{}),
         "message":item.get("reason",""),
-        "guidance":item.get("guidance","")
+        "guidance":item.get("guidance",""),
+        **({"design_review":item["design_review"]} if "design_review" in item else {})
     }
 
 

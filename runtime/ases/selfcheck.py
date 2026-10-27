@@ -13,8 +13,8 @@ CAPABILITY_FILES = {
     "export.py": "generic_export",
 }
 
-def selfcheck(root: Path) -> dict:
-    result = scan_project(root, root / ".ases-selfcheck")
+def selfcheck(root: Path, *, out: Path | None = None, scan_result: dict | None = None) -> dict:
+    result = scan_result if scan_result is not None else scan_project(root, out if out is not None else root / ".ases-selfcheck")
     graph = result["graph"]
     paths = {n.get("path","") for n in graph["nodes"]}
     observed_caps = {

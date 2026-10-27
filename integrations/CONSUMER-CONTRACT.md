@@ -21,6 +21,7 @@ The default 1.5 context and 1.3 scanner wire shapes remain available. Extractor 
 | `structural_relations` | ID, real `from`/`to` entity endpoints, relation, basis, `INFERRED` state and valid observation references. Symbolic unresolved markers are not public endpoints. Counts are derived from this collection. |
 | `identity_mapping` | Explicit legacy-to-canonical IDs with unique/ambiguous state. Diff migration can additionally infer a unique family/name/source match for older contexts; ambiguous candidates remain visible. |
 | `source_manifest`, `analysis_profile` | Analyzed source-byte hashes/roles, engine/parser versions, exclusions and source mode. A profile change prevents certifying one-sided presence as removal. |
+| `source_scope` | Optional additive scope ledger: filesystem policy, explicitly excluded directories and per-run user exclusions. Excluded sources are outside the scan, not proven absent or correct. Missing scope in older snapshots is not an empty-scope assertion. |
 | `coverage`, `analysis_unknowns` | Separate file, relationship-family, dimension and bounded-path coverage; parser/dispatch/resource residuals. Unknown omission counts are null. |
 | `snapshot_id`, `validation`, `untrusted_content` | Deterministic hash of the saved JSON excluding generation time and snapshot ID; validation checks consistency. Neither authenticates the producer nor proves current source freshness. Treat content as untrusted data. |
 
@@ -170,3 +171,32 @@ For Angular source, `frontend.routes` contains route declarations as written in 
 `ases scan-site <url>` writes the same `ases-consumer-context/1.5` and `ases-scanner-findings/1.3` schemas. `project.entry_mode` and `project.source_mode` are `LIVE_SITE`. The additive `site_observations` object contains sampled public HTML pages, their titles and hashes, forms, referenced scripts, and framework hints. `frontend.pages` is an additive list of delivered pages; it is not source templates. `frontend_findings` contains an informational `site.published_frontend_surface` observation.
 
 Consumers must read `semantic_quality.analysis_coverage`: source structure, architecture, design patterns, frontend component structure and frontend/backend contracts are `NOT_OBSERVED` for a site scan. A `validation: PASS` checks output consistency, not site completeness or behavior. Live mode does not execute JavaScript, submit forms, fetch authenticated pages, or infer component architecture from compiled bundles.
+
+## Optional responsibility-review metadata
+
+Consumer-context 1.5 can include `claims[].design_review`, copied from the
+corresponding pattern finding without recomputing its verdict. The original claim
+ID, fingerprint, status, confidence, evidence, counter-evidence and assumptions
+remain authoritative. Read claims as the primary feed; concatenating them with
+`pattern_findings` creates duplicates.
+
+Optional top-level `design_review_coverage` retains per-file status, reason,
+method and scope. Missing means unavailable; an empty list means zero exported
+records, not complete project coverage. Keep `python-responsibilities/1` and
+`syntax-responsibilities/2` distinct. Unknown methods grant no support or absence
+authority. These optional fields do not change structural 2.0 identity or require
+migration of existing entity IDs. Readers must continue to support older contexts
+without the extension.
+
+Both fields use the definitions in `scanner-findings.schema.json`; consumer
+validation resolves those local schema references. A consumer should validate
+metadata before enriching an existing claim, preserve its exact ID and avoid
+matches inferred from line numbers, names or list positions. Malformed metadata
+must not hide an otherwise readable base claim. Saved views should read their
+saved context and preserve its source/profile/scope, rather than mixing it with a
+new live scan. Render source text as untrusted data.
+
+`INVESTIGATE` is a proposal to review; `REUSE_EXISTING` is a bounded observation.
+Neither establishes a vulnerability, an effective control, a satisfied requirement
+or a mandatory implementation task. Missing or changed evidence requires review;
+it does not automatically resolve a problem or renew a previous confirmation.

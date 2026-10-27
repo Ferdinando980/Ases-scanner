@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>ASES — sul tavolo</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content / Vai al contenuto</a>
+  <header class="masthead">
+    <a class="brand" href="/" aria-label="ASES home"><span class="brand-mark" aria-hidden="true">a.</span> ASES <span class="edition" data-t="desk">sul tavolo</span></a>
+    <div class="header-end"><span class="local" data-t="local">Lavora sul tuo computer</span><button id="language" class="language" type="button" aria-label="Switch to English">EN</button></div>
+  </header>
+  <div class="app-shell">
+  <aside class="sidebar">
+    <p class="nav-caption" data-t="workspace">SPAZIO DI LAVORO</p>
+    <nav aria-label="Navigazione principale / Main navigation">
+      <button id="new-project" class="nav-item" type="button" data-t="newProject">Nuova analisi</button>
+      <button id="current-result" class="nav-item" type="button" data-t="currentResult" disabled>Risultati</button>
+      <button id="current-docs" class="nav-item" type="button" data-t="documents" disabled>Documenti</button>
+      <span class="nav-divider"></span>
+      <button id="open-snapshot" class="nav-item" type="button" data-t="openSaved">Apri analisi salvata</button>
+      <button id="open-tools" class="nav-item" type="button" data-t="tools">Altri strumenti</button>
+      <button id="open-kit" class="nav-item" type="button" data-t="method">Metodo e template</button>
+    </nav>
+    <p class="session-note" data-t="sessionNote">Report temporanei.<br>Scaricali per conservarli.</p>
+  </aside>
+  <main id="content">
+    <section id="introduction" class="introduction" aria-labelledby="title">
+      <p class="eyebrow" data-t="eyebrow">UN PO’ D’ORDINE, PRIMA DEL REFACTORING</p>
+      <h1 id="title">Il codice c’è.<br>Facciamoci un’idea.</h1>
+      <p class="lead" id="lead" data-t="lead">Una cartella, un’analisi leggibile. Poi puoi seguire ogni indizio fino al codice. Anche quello che speravi fosse già documentato.</p>
+      <form id="scan-form">
+        <select id="task" name="task" aria-label="Operation" hidden></select>
+        <label for="source" data-t="folder">Cartella del progetto</label>
+        <div class="input-row"><input id="source" name="source" type="text" placeholder="C:\progetti\il-mio-progetto" autocomplete="off" required><button id="choose-folder" class="secondary" type="button" data-t="chooseFolder">Scegli cartella…</button></div>
+        <p class="hint" data-t="inputHint">Incolla un percorso locale completo. Per un repository remoto, clonalo prima con Git.</p>
+        <div id="extra-fields"></div>
+        <button id="scan" class="primary" type="submit" data-t="analyze">Analizza il progetto ↗</button>
+      </form>
+    </section>
+    <section id="job" class="job" hidden aria-labelledby="job-title">
+      <div class="job-heading"><div><p class="eyebrow" data-t="inProgress">ANALISI IN CORSO</p><h2 id="job-title"></h2></div><button id="cancel" class="secondary" type="button" data-t="cancel">Interrompi</button></div>
+      <p id="stage" role="status" aria-live="polite"></p><p id="elapsed" class="muted"></p>
+      <ol id="job-stages"></ol>
+    </section>
+    <p id="status" role="status" aria-live="polite"></p>
+    <section id="error-panel" hidden role="alert"><h2 data-t="errorTitle">L’analisi si è fermata</h2><p id="error"></p><p class="muted" data-t="retryHint">Puoi correggere il percorso o restringere il perimetro e riprovare. L’ultima analisi completata resta disponibile.</p><button id="retry" class="secondary" type="button" data-t="retry">Torna al progetto</button></section>
+    <section id="tools" hidden></section>
+    <section id="kit" hidden aria-label="Documenti di sviluppo / Engineering documents"></section>
+    <section id="welcome" class="welcome" aria-label="Come funziona / How it works">
+      <div><span class="step">01</span><h2 data-t="step1">Prima, il quadro.</h2><p data-t="step1p">Struttura, route e punti da rivedere, raccolti in una risposta breve.</p></div>
+      <div><span class="step">02</span><h2 data-t="step2">Poi, le prove.</h2><p data-t="step2p">Apri un risultato e leggi la riga che lo sostiene. Senza caccia al file.</p></div>
+      <div><span class="step">03</span><h2 data-t="step3">Il giudizio resta tuo.</h2><p data-t="step3p">Collegamenti statici e zone non coperte restano riconoscibili. Il verde è un colore, non un certificato.</p></div>
+    </section>
+    <section id="analysis" hidden aria-label="Analisi / Analysis">
+      <div class="report-heading"><div><p id="project-label" class="eyebrow"></p><h1 id="report-title"></h1><p id="report-caption" class="muted"></p></div><div class="report-actions"><label for="export-mode" data-t="exportMode">Cosa vuoi conservare?</label><select id="export-mode" aria-describedby="export-notice"><option value="full" data-t="exportFull">Pacchetto completo — documenti e revisioni</option><option value="reduced" data-t="exportReduced">Rapporto ridotto — solo conteggi</option></select><p id="export-notice" class="muted"></p><button id="download" class="primary" type="button" data-t="download">Scarica il rapporto ↓</button><button id="clear" class="text-button" type="button" data-t="clear">Svuota la sessione</button></div></div>
+      <nav id="tabs" aria-label="Sezioni del rapporto / Report sections"></nav>
+      <section id="overview" class="overview"></section>
+      <section id="browser" hidden>
+        <div class="browser-head"><div><h2 id="section-title"></h2><p id="section-description" class="muted"></p><select id="collection" aria-label="Raccolta / Collection"></select></div><label class="search-label"><span data-t="search">Cerca nei risultati</span><input id="search" type="search" placeholder="Nome, percorso, stato…" autocomplete="off"></label></div>
+        <div class="workspace"><div><div id="items" class="items"></div><div id="paging" class="paging"></div></div><aside id="detail" class="detail" aria-label="Dettagli e prove / Details and evidence"></aside></div>
+      </section>
+      <section id="documents" hidden></section>
+    </section>
+    <footer><p data-t="footer">Analisi locale. Nessun sorgente caricato su servizi esterni.</p></footer>
+  </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "RAD": ["Purpose and scope", "Functional requirements", "Nonfunctional requirements", "Constraints", "Scenarios and use cases", "Analysis and navigation", "Glossary and open questions"],
+  "SDD": ["Design goals and decisions", "Subsystems and services", "Deployment", "Persistence", "Access and security", "Concurrency and resources", "Boundary conditions", "Traceability"],
+  "ODD": ["Introduction and conventions", "Packages and modules", "Interfaces and contracts", "Class diagrams", "Reuse and design decisions", "Traceability", "Glossary"]
+}

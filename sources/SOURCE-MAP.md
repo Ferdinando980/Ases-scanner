@@ -2,6 +2,21 @@
 
 This file explains where the standard came from and what authority each source has.
 
+## Generated engineering-document sections
+
+| Artifact | Methodological source | Generated view |
+|---|---|---|
+| RAD | Requirements collection, part II, slides 31–34 | Purpose/current/proposed scope, RF/RNF, constraints, scenarios, analysis/navigation, glossary and unknowns |
+| SDD | System Design, chapter 7, slide 11 | Goals, decomposition, deployment, persistence, access, concurrency/resources and boundary conditions |
+| ODD | Object design introduction and interface specification, slides 18–37, especially 35–37 | Introduction/conventions, packages, precise interfaces and available contracts, class/module diagrams, decisions, traceability and glossary |
+| TP/TCS/TIR/TSR | Course testing method | Plan, definitions/oracles, imported incidents/results, with execution status separated |
+
+JustInTime and BiblioNet are illustrative cases, including useful negative cases.
+An ODD consisting only of pattern examples is incomplete. A checklist demanding a
+fixed number of patterns is an academic constraint, not an ASES rule. Course PDFs
+and project artifacts are not redistributed with the runtime. See the versioned
+[engineering contract](../docs/ENGINEERING-CONTRACT.md) for source authority and limits.
+
 ## A. University course — normative methodological source
 
 ### Introduction / lifecycle

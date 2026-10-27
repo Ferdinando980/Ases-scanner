@@ -81,7 +81,7 @@ def build_semantic_model(project_name: str, inventory: dict, graph: FactGraph, r
             "alternatives":[],
             "side_effects":infer_side_effects(route,graph),
             "provenance":{
-                "state":"OBSERVED","confidence":"high",
+                "state":route.provenance.state,"confidence":route.provenance.confidence,
                 "evidence":route.provenance.evidence,
                 "assumptions":actor_assumptions,
             },
@@ -95,6 +95,10 @@ def build_semantic_model(project_name: str, inventory: dict, graph: FactGraph, r
     assets=recover_assets(graph)
     trace=semantic_trace_links(graph,behaviors,assets,controls)
     pattern_findings=recover_pattern_findings(root, graph, inventory) if root else []
+    if root:
+        from ..scanners.filesystem import unavailable_sources, source_unavailable
+        for missing in unavailable_sources(root):
+            source_unavailable(root,root/missing['path'],graph)
     conformance_findings=recover_architecture_conformance(graph, pattern_findings)
     frontend_findings=recover_frontend_findings(graph)
     cross_boundary_findings=recover_cross_boundary_findings(graph)
@@ -160,6 +164,7 @@ def build_semantic_model(project_name: str, inventory: dict, graph: FactGraph, r
         "unknowns":unknowns,
     }
     model["claims"] = build_claims(model)
+    model['design_review_coverage']=inventory.get('design_review_coverage',[])
     return model
 
 def _entity(n):

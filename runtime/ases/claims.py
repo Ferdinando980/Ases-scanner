@@ -4,7 +4,7 @@ from __future__ import annotations
 def build_claims(model: dict) -> list[dict]:
     claims=[]
     for item in [*model.get("pattern_findings",[]), *model.get("conformance_findings",[]), *model.get("frontend_findings",[]), *model.get("cross_boundary_findings",[])]:
-        claims.append({
+        claim = {
             "id":item.get("id"),
             "fingerprint":item.get("fingerprint", item.get("id")),
             "rule_id":item.get("rule_id"),
@@ -15,7 +15,12 @@ def build_claims(model: dict) -> list[dict]:
             "evidence":item.get("evidence",[]),
             "counter_evidence":item.get("counter_evidence",[]),
             "assumptions":item.get("assumptions",[]),
-        })
+        }
+        # Keep the explanatory review attached to the same finding identity.
+        # It is optional so older snapshots and findings retain their old shape.
+        if "design_review" in item:
+            claim["design_review"] = item["design_review"]
+        claims.append(claim)
     for section, status in (("unknowns","UNKNOWN"),("assumptions","INFERRED")):
         for item in model.get(section,[]):
             p=item.get("provenance",{})

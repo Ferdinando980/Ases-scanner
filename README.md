@@ -6,13 +6,55 @@
 
 <p align="center"><b>English</b> · <a href="README.it.md">Italiano</a></p>
 
+Optional tools now include a local-model reading assistant and correlation of
+supplied HTTP observations. Their hypotheses stay separate from recovered facts;
+a fluent sentence is still not a passing test. [Usage and limits](docs/LOCAL-INTERPRETATION.md).
+
+Experimental version 1.13 also reads native ReqView `.reqw`, ARFF and HTML
+paragraph requirements with IDs. It keeps original sentences, distinguishes
+obligations from recommendations and shows when a functional/nonfunctional type
+is only a suggestion. Missing evidence does not earn a category by popular vote.
+[Measured results and limits](docs/ACCURACY.md).
+
+Version 1.13 also recognizes more explicit constraints and subjectless obligations, with review warnings. Private and conditional callable summaries retain their own-body scope; they do not become public application entries. Empty bodies receive explicit coverage, not a requirement pulled out of a hat. The optional local model has a bounded measured evaluation in [accuracy](docs/ACCURACY.md).
+
 ## Why I built it
+
+See [how to read pattern suggestions](docs/PATTERN-REVIEW.md) for the distinction
+between observed structures and refactoring candidates. A large switch is not an
+automatic request to turn the project into a collection of classes.
 
 Some projects begin with an idea and no code. Others arrive with plenty of code and a README last seen alive three refactors ago. I wanted a useful way to work from either end.
 
 ASES combines a **software engineering toolkit** with a **Python scanner for understanding existing software**. The kit gives coding assistants a method for requirements, design, implementation, tests and maintained documentation. The scanner works back from source code to supported structure, relationships and documentation, keeping the evidence attached. It runs locally without an LLM or an API key.
 
 They belong together: understand what exists, decide what should change, implement it, and check that code, tests and documentation still agree. Preferably without introducing a Strategy Factory Manager to fix a two-line conditional.
+
+## Try it in your browser
+
+With Python 3.11+ and an active virtual environment, from the repository root:
+
+```console
+python -m pip install -e "./runtime[documents]"
+ases ui
+```
+
+1. In **New analysis**, choose a folder or paste a public HTTPS Git repository URL.
+2. Start: see the actual stage and elapsed time, with a stop button. Options let you exclude folders without changing the project.
+3. Open **Results** for the summary and review candidates. **Code map** connects symbols to their source evidence.
+4. In **Documents**, start with **Operations and questions**: read what the source shows and add what you know. Write or explicitly adopt requirements and follow sources, interfaces and tests. **Complete package** saves documents, reviews and snapshots in a reopenable ZIP; its evidence can include extracted text, code fragments and paths, so inspect it before sharing. **Reduced report** keeps aggregate counts and omissions, without those details, and cannot reopen an analysis. Counts can still reveal project characteristics. See the [desk guide](docs/DESK.md) for export details.
+
+To reopen a complete package, extract it and choose **Open saved analysis**. Opening shows one progress phase; it does not rescan the project. Changing the interface language localizes navigation and on-screen explanations, but does not translate saved Markdown. To regenerate English documents from the snapshot, use `ases documents ... --language en` as described in the [document guide](docs/DOCUMENTS.md).
+
+No twelve-file treasure hunt to work out where to begin. The desk runs locally, in English and Italian, with no frontend dependencies to install. Git is needed for remote repositories. Analyses neither start the target code nor run its tests.
+
+**More tools** collects comparisons, websites, artifacts, reconciliation, audit, export, capability checks, labeled-corpus measurement and recognized-output cleanup. **Method & templates** lets you edit and download the kit’s engineering documents. You supply requirements and decisions: source code cannot testify to what stakeholders originally intended.
+
+The analyzed project stays untouched. Desk reports are temporary: download them to keep them. A failed or stopped analysis preserves the last completed result. Ctrl+C in the terminal ends the session and removes its temporary files; closing the browser tab alone does not stop the process. The [desk guide](docs/DESK.md) covers setup, results, limits and error recovery.
+
+[![The ASES desk showing a summary, next steps and explicit limits.](docs/images/ases-desk.jpg)](docs/images/ases-desk.jpg)
+
+Actual screenshot using the public `runtime/tests/fixture_spring` test fixture to demonstrate the workflow. [See the route, source and evidence view](docs/images/ases-desk-evidence.jpg).
 
 ## Two parts, three starting points
 
@@ -48,6 +90,18 @@ The kit includes:
 The methodology draws on university software engineering material, with its sources and their roles recorded in [the source map](sources/SOURCE-MAP.md). Templates provide structure; they do not make an empty document useful by themselves.
 
 To adopt it, place the kit in the target project's `.ases` directory and merge the appropriate adapter into the agent's existing instructions. Keep existing project instructions. The [engineering guide](docs/ENGINEERING-WORKFLOW.md) lists the files, setup and a concrete example. The legacy `scripts/ases.py` companion offers classification hints and file-presence checks; the agent remains responsible for reasoning.
+
+## Requirements are sentences, not a stamp collection
+
+When specifications exist, ASES recovers the available declarations: ID, text and source, plus actors, priorities and thresholds where it can separate them. It reads textual PDFs, Excel workbooks, Word and static HTML documentation. A discovered but unreadable file is reported as such; finding a PDF does not count as understanding it.
+
+For **reverse engineering**, it starts from supported code paths: a request or public call, conditions, results, errors and calls with possible effects. It builds behavior sentences and links them to the evidence. For example, it can reconstruct that a handler checks a title, declares an error when it is missing and prepares a response with an `id` field. A method named `save` does not prove that an order was persisted.
+
+In **Documents**, choose **Requirements** for original declarations or **Requirements reconstructed from code** for this interpretation. RAD keeps declared requirements separate from reconstructed behavior and links them to available evidence. SDD and ODD describe the recovered system and object structure, signatures, available contracts and static diagrams; test documents distinguish definitions, proposals and imported results. These are evidence-based views, not stakeholder-approved specifications. For a new revision, scan to a separate snapshot and compare it with the previous one; `ases documents-diff previous.ases current.ases --out impact.json` reports document changes. Reviews remain separate from generated records, and changed support is flagged for review rather than silently carried forward. The [document guide](docs/DOCUMENTS.md) explains formats and limits.
+
+**Operations and questions** groups entries with the same handlers and asks for context that code cannot establish. Give an operation a readable name, declare a need and supply its author, scope and acceptance criterion. Confirming a reading does not automatically adopt a requirement; adoption does not verify satisfaction. RAD keeps these contributions separate from original specifications. The Save button does not come with a rubber stamp saying “done”.
+
+Interpretation is static and partial, rather than universal domain understanding. Dynamic dispatch, complex Java flows, raster diagrams, stakeholder intent and runtime correctness still need review. ASES can reconstruct a map; telepathy remains outside the dependency list. The [document guide](docs/DOCUMENTS.md) explains what is read, what is inferred and how to regenerate a package.
 
 ## Understand existing code with the scanner
 
@@ -86,6 +140,11 @@ Entity identity, finding fingerprint, observation identity and snapshot identity
 
 ## Run a source scan
 
+The direct route is `ases ui`. For detailed setup, automation and terminal use:
+
+<details>
+<summary>Environment and CLI commands</summary>
+
 From the repository root, with Python 3.11 or newer in an active virtual environment:
 
 ```sh
@@ -121,12 +180,15 @@ ases scan /path/to/project --out next.ases --baseline current.ases
 
 Queries read saved evidence without silently rescanning mutable source. Exact ID/name/path matching reports ambiguity. Response pagination is distinct from source-analysis coverage. Canonical `entities` include declarations beyond the smaller legacy `components` projection; those counts are not interchangeable.
 
+</details>
+
 ## What comes back
 
 A source scan writes:
 
 | Output | Purpose |
 |---|---|
+| `docs/REPORT.md`, `REPORT.it.md` (desk) | First reading in English and Italian: structure, routes, checks and next step |
 | `docs/SUMMARY.md`, `SYSTEM-OVERVIEW.md` | Review guide and recovered system overview |
 | `docs/RAD.md`, `SDD.md`, `ODD.md` | Behavior, architecture and object-design reconstruction from implementation evidence |
 | `docs/TESTING.md`, `TRACEABILITY.yaml`, `CONTROLS.yaml`, `QUALITY.md` | Recovered test baseline, links, control observations and quality/coverage limits |
@@ -187,9 +249,9 @@ ASES supplies generic engineering procedures and structural evidence. Other tool
 
 ## Validation and current state
 
-Runtime **1.9.0**, engineering standard **0.3**. The latest verified Windows/Python 3.14.7 suite has **241 passed, 1 skipped**; the skipped case needs symbolic-link permissions. The [accuracy benchmark](docs/ACCURACY.md) covers 16 synthetic cases with 39 explicit labels and writes inspectable HTML, Markdown and JSON. All 16 cases and position-change checks pass. Independent label review is pending; this is a regression corpus, not an accuracy estimate for arbitrary repositories.
+This development version is **experimental** and requires Python 3.11 or newer. Windows, Linux (including WSL2) and macOS have been tested; exact versions, skips and remaining platform checks are listed in the [support matrix](docs/SUPPORT.md). The [accuracy guide](docs/ACCURACY.md) separates bundled synthetic regressions from new external measurements. Those measurements expose substantial gaps in free-prose recovery and functional/nonfunctional classification; preserving supplied labels is a different test. Independent review and user utility remain open.
 
-Start with the [engineering guide](docs/ENGINEERING-WORKFLOW.md) for development, the [CLI guide](runtime/README.md) for scanner commands, and [TESTING.md](TESTING.md) to reproduce the checks. [Evidence terminology](EPISTEMOLOGY.md), [pattern rules](PATTERN-RULES.md) and [consumer contracts](integrations/CONSUMER-CONTRACT.md) explain interpretation and integration. Dynamic dispatch, global middleware, servlet routes, custom clients/event buses and runtime execution remain method-specific limits. Zero speculative opportunities is a valid result.
+Start with the [engineering guide](docs/ENGINEERING-WORKFLOW.md) for development, the [CLI guide](runtime/README.md) for scanner commands, and [TESTING.md](TESTING.md) to reproduce checks. [Evidence terminology](EPISTEMOLOGY.md), [pattern rules](PATTERN-RULES.md) and [consumer contracts](integrations/CONSUMER-CONTRACT.md) explain interpretation and integration. Dynamic dispatch, global middleware, servlet routes, custom clients/event buses and runtime execution remain method-specific limits. Zero speculative opportunities is a valid result.
 
 ## License
 

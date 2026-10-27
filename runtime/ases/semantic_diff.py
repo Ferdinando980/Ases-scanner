@@ -13,11 +13,11 @@ VOLATILE = {"generated_at", "project_fingerprint", "snapshot_id", "evidence_stre
             "observation_refs", "line", "lines", "source_hashes", "identity_mapping"}
 
 
-def load_context(path: Path) -> dict:
+def load_context(path: Path, *, max_bytes: int = 64 * 1024 * 1024) -> dict:
     if path.is_dir():
         path = path / ("consumer-context.v2.json" if (path / "consumer-context.v2.json").is_file()
                        else "consumer-context.json")
-    if path.is_symlink() or not path.is_file() or path.stat().st_size > 64 * 1024 * 1024:
+    if max_bytes <= 0 or path.is_symlink() or not path.is_file() or path.stat().st_size > max_bytes:
         raise ValueError("Snapshot must be a bounded regular file")
     try:
         data = json.loads(path.read_text(encoding="utf-8"))

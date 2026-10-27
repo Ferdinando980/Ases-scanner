@@ -16,23 +16,33 @@ def enrich_traceability(graph: FactGraph) -> FactGraph:
     """
     by_id={n.id:n for n in graph.nodes}
     tests=[n for n in graph.nodes if n.kind=="test"]
+    methods, outgoing, production_names = defaultdict(list), defaultdict(list), defaultdict(list)
+    nominal_candidates = []
+    candidate_kinds = {"method","function","controller","service","repository","entity","class","domain_object","factory","state_implementation"}
+    for node in graph.nodes:
+        if node.kind == "method":
+            methods[(node.path, node.name)].append(node)
+        if not _is_test_node(node):
+            production_names[node.name].append(node)
+            normalized = _norm(node.name)
+            if node.kind in candidate_kinds and len(normalized) >= 4:
+                nominal_candidates.append((normalized, node))
+    for edge in graph.edges:
+        outgoing[edge.source].append(edge)
 
     # Map test-node to matching method in same test file/name, then follow only
     # explicit call/dependency edges into production nodes.
     for t in tests:
-        test_methods=[
-            n for n in graph.nodes
-            if n.kind=="method" and n.path==t.path and n.name==t.metadata.get("test_method_name", t.name)
-        ]
+        test_methods = methods[(t.path, t.metadata.get("test_method_name", t.name))]
         targets=set()
         nominal = False
         callback = t.metadata.get("test_callable")
         if callback:
-            for edge in graph.edges:
+            for edge in outgoing[callback]:
                 if edge.source == callback and edge.relation == "calls" and edge.target in by_id and not _is_test_node(by_id[edge.target]):
                     targets.add(edge.target)
         for tm in test_methods:
-            for e in graph.edges:
+            for e in outgoing[tm.id]:
                 if e.source != tm.id:
                     continue
                 if e.relation not in {"calls_dependency","calls","calls_method_name","depends_on"}:
@@ -45,10 +55,7 @@ def enrich_traceability(graph: FactGraph) -> FactGraph:
                         targets.add(target.id)
                 elif e.target.startswith("method-name:"):
                     typename=e.target.split(":",1)[1].split("#",1)[0]
-                    prod_types=[
-                        n for n in graph.nodes
-                        if n.name==typename and not _is_test_node(n)
-                    ]
+                    prod_types = production_names[typename]
                     if len(prod_types)==1:
                         targets.add(prod_types[0].id)
 
@@ -56,13 +63,8 @@ def enrich_traceability(graph: FactGraph) -> FactGraph:
         if not targets:
             norm=_norm(t.name)
             matches=[]
-            for p in graph.nodes:
-                if p.kind not in {"method","function","controller","service","repository","entity","class","domain_object","factory","state_implementation"}:
-                    continue
-                if _is_test_node(p) or p.path==t.path:
-                    continue
-                pn=_norm(p.name)
-                if len(pn)>=4 and pn in norm:
+            for pn, p in nominal_candidates:
+                if p.path != t.path and pn in norm:
                     matches.append(p)
             unique={m.id:m for m in matches}
             if len(unique)==1:

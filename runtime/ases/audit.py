@@ -6,7 +6,7 @@ from .pipeline import scan_project, default_output
 def _ids(model, section):
     return {x["id"] for x in model.get(section,[]) if "id" in x}
 
-def audit_project(root: Path) -> dict:
+def audit_project(root: Path, *, scan_options: dict | None = None) -> dict:
     root=root.resolve()
     base=default_output(root)
     model_path=base/"semantic-model.yaml"
@@ -15,7 +15,7 @@ def audit_project(root: Path) -> dict:
     old_manifest=json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else None
 
     with tempfile.TemporaryDirectory(prefix="ases-audit-") as td:
-        fresh_result=scan_project(root,Path(td))
+        fresh_result=scan_project(root,Path(td), **(scan_options or {}))
         fresh=fresh_result["semantic_model"]
         new_manifest=fresh_result["manifest"]
 

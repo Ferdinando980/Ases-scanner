@@ -11,6 +11,7 @@
     "summary": {"type":"object","required":["findings","observed_patterns","pattern_opportunities","architecture_contradictions","pattern_hints","suppressed"]},
     "coverage": {"type":"object"},
     "source_classification": {"type":"object"},
+    "design_review_coverage":{"$ref":"#/$defs/design_review_coverage"},
     "findings": {"type":"array","items":{"$ref":"#/$defs/finding"}},
     "hints": {"type":"array","items":{"$ref":"#/$defs/finding"}},
     "suppressed": {"type":"array","items":{"$ref":"#/$defs/finding"}}
@@ -35,8 +36,24 @@
         "evidence_strength":{"type":["string","null"]},
         "counter_evidence":{"type":"array","items":{"type":"string"}},
         "assumptions":{"type":"array","items":{"type":"string"}},
-        "signals":{"type":"object"}, "message":{"type":"string"}, "guidance":{"type":"string"}
+        "signals":{"type":"object"}, "message":{"type":"string"}, "guidance":{"type":"string"},
+        "design_review":{"$ref":"#/$defs/design_review"}
       }
+    },
+    "localized_text":{"type":"object","additionalProperties":false,"required":["it","en"],"properties":{"it":{"type":"string"},"en":{"type":"string"}}},
+    "design_review":{
+      "type":"object","additionalProperties":false,"required":["method","verdict","problem","expected_benefit","existing_solution","simpler_alternative","when_not_to_apply","questions"],
+      "properties":{
+        "method":{"enum":["python-responsibilities/1","syntax-responsibilities/2"]},"verdict":{"enum":["INVESTIGATE","REUSE_EXISTING"]},
+        "problem":{"$ref":"#/$defs/localized_text"},"expected_benefit":{"$ref":"#/$defs/localized_text"},
+        "existing_solution":{"$ref":"#/$defs/localized_text"},"simpler_alternative":{"$ref":"#/$defs/localized_text"},
+        "when_not_to_apply":{"$ref":"#/$defs/localized_text"},"questions":{"$ref":"#/$defs/localized_text"}
+      }
+    },
+    "design_review_coverage":{
+      "type":"array",
+      "uniqueItems":true,
+      "items":{"type":"object","additionalProperties":false,"required":["path","status","reason","method","scope"],"properties":{"path":{"type":"string"},"status":{"enum":["ANALYZED","UNKNOWN","NOT_SUPPORTED"]},"reason":{"type":"string"},"method":{"enum":["python-responsibilities/1","syntax-responsibilities/2"]},"scope":{"type":"string"}}}
     }
   }
 }

@@ -233,6 +233,7 @@ def public_context(model: dict, graph: dict, inventory: dict, manifest: dict) ->
                 context["coverage"]["dimensions"][dimension] = {"status": "PARTIAL", "basis": "See per-file extractor coverage and residual unknowns."}
     context["analysis_unknowns"] = remap(deepcopy(graph.get("unknowns", [])))
     context["source_manifest"] = deepcopy(inventory.get("source_manifest", []))
+    context["source_scope"] = deepcopy(inventory.get("source_scope", {}))
     context["technical_relation_counts"] = dict(Counter(x["relation"] for x in context["structural_relations"]))
     context["validation"] = {"status": "PASS", "meaning": "Snapshot consistency only; source freshness and runtime are unverified."}
     context["untrusted_content"] = True

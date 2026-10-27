@@ -4,6 +4,9 @@
 
 Describe how analysis/system-design information is refined into implementation-level objects.
 
+State the scope, trade-offs, source baseline, naming/typing conventions, acronyms and
+references. Separate declared contracts, observed implementation and assumptions.
+
 ## 2. Package/module structure
 
 ## 3. Reuse and adaptation decisions
@@ -54,3 +57,16 @@ Include only patterns actually justified by the Pattern Gate.
 Only evidence-backed optimizations.
 
 ## 9. Traceability
+
+Link requirements, subsystem services, APIs, decisions, source locations and tests.
+Distinguish a test definition, an execution and evidence supporting a requirement.
+
+## 10. Class and module diagrams
+
+Use readable diagrams per package/subsystem. Show only supported relations, label
+inferred links and do not invent cardinalities or execution order. Functional and
+module APIs are an explicit ASES extension for projects without classes.
+
+## 11. Glossary
+
+Define domain terms, acronyms and conventions used by these interface sheets.

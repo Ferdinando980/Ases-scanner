@@ -21,3 +21,7 @@ benchmarks/*-output/
 /SELF-HOSTING.md
 /docs/REA-IMPLEMENTATION.md
 /docs/REVIEW-2026-10-14.md
+
+# Task-local test workspaces and self-inspection output.
+.pytest-*/
+.ases-selfcheck/

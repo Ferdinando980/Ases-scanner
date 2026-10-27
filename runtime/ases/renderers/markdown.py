@@ -237,6 +237,15 @@ def recovered_odd(model: dict, graph: dict) -> str:
             lines.append(f"- **{finding['pattern']}** — {finding['status']} / {finding['confidence']}: {finding['reason']}")
             lines.append(f"  - Evidence: {', '.join(finding.get('evidence', [])) or 'not available'}")
     hints = model.get("pattern_hints", [])
+    reviews = [p for p in patterns if p.get('design_review')]
+    if reviews:
+        lines += ['', '## Design reasoning — hypotheses and existing solutions', '',
+                  'Static review only; refactoring benefit, semantic equivalence and change pressure are not established.']
+        for p in reviews:
+            review = p['design_review']
+            lines += ['', f"### {p['pattern']} — {review['verdict']}", f"Evidence: {', '.join(p['evidence'])}"]
+            for key, label in [('problem','Problem to verify'),('expected_benefit','Expected benefit'),('existing_solution','Existing solution'),('simpler_alternative','Simplest alternative'),('when_not_to_apply','When to leave it alone'),('questions','Questions before deciding')]:
+                lines.append(f"- **{label}:** {review[key]['en']}")
     lines += ["", "## Pattern hints (suppressed from the main scanner feed)"]
     if hints:
         for p in hints:

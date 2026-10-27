@@ -17,10 +17,19 @@
     "trust_boundaries":{"type":"array"}, "controls":{"type":"array"}, "assumptions":{"type":"array"},
     "tests":{"type":"array"}, "trace_links":{"type":"array"}, "conflicts":{"type":"array"},
     "unknowns":{"type":"array"}, "sessions":{"type":"array"}, "documentation_artifacts":{"type":"array"}, "source_classification":{"type":"object"},
-    "semantic_quality":{"type":"object"}, "claim_states":{"type":"array"}, "claims":{"type":"array"},
+    "semantic_quality":{"type":"object"}, "claim_states":{"type":"array"}, "claims":{"type":"array","items":{"$ref":"#/$defs/claim"}},
+    "design_review_coverage":{"$ref":"scanner-findings-v1.3.json#/$defs/design_review_coverage"},
     "pattern_findings":{"type":"array"}, "conformance_findings":{"type":"array"},
     "frontend_findings":{"type":"array"}, "cross_boundary_findings":{"type":"array"},
     "architecture_patterns":{"type":"array"}, "pattern_candidates":{"type":"array"},
     "pattern_opportunities":{"type":"array"}, "pattern_hints":{"type":"array"}
+  },
+  "$defs": {
+    "claim": {
+      "type":"object",
+      "properties": {
+        "design_review":{"$ref":"scanner-findings-v1.3.json#/$defs/design_review"}
+      }
+    }
   }
 }

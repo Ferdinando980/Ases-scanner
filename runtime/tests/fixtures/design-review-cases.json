@@ -1,0 +1,17 @@
+{
+  "scope":"Controlled syntax/name-based regressions, not independent semantic accuracy",
+  "cases":[
+    {"id":"service-mixed","source":"def upload(h, memory, payload):\n    value=memory.ingest(payload)\n    memory.save()\n    h._json(200,value)\ndef change(h,memory,payload):\n    value=memory.mutate(payload)\n    memory.save()\n    h._json(200,value)\n","present":["review.service_responsibilities:HINT"],"absent":["review.service_responsibilities:OPPORTUNITY"]},
+    {"id":"service-delegated","source":"def upload(h,app,payload):\n    h._json(200,app.upload(payload))\ndef change(h,app,payload):\n    h._json(200,app.change(payload))\n","present":[],"absent":["review.service_responsibilities:HINT"]},
+    {"id":"service-single","source":"def upload(h,memory,payload):\n    value=memory.ingest(payload)\n    memory.save()\n    h._json(200,value)\n","present":[],"absent":["review.service_responsibilities:HINT"]},
+    {"id":"service-no-persistence","source":"def upload(h,memory,payload):\n    h._json(200,memory.ingest(payload))\ndef change(h,memory,payload):\n    h._json(200,memory.mutate(payload))\n","present":[],"absent":["review.service_responsibilities:HINT"]},
+    {"id":"strategy-provider","source":"def answer(provider,worker):\n    if provider=='fast':\n        result=worker.fast()\n    else:\n        result=worker.accurate()\n    return result\n","present":["review.strategy_variants:HINT"],"absent":["review.strategy_variants:OPPORTUNITY"]},
+    {"id":"strategy-return-await","source":"async def answer(backend,worker):\n    if backend=='remote':\n        return await worker.remote()\n    else:\n        return await worker.local()\n","present":["review.strategy_variants:HINT"],"absent":["review.strategy_variants:OPPORTUNITY"]},
+    {"id":"strategy-different-receivers","source":"def answer(provider,first,second):\n    if provider=='fast':\n        result=first.run()\n    else:\n        result=second.run()\n    return result\n","present":[],"absent":["review.strategy_variants:HINT"]},
+    {"id":"strategy-different-output","source":"def answer(provider,worker):\n    if provider=='fast':\n        first=worker.fast()\n    else:\n        second=worker.accurate()\n","present":[],"absent":["review.strategy_variants:HINT"]},
+    {"id":"registry-present","source":"def load_text(): pass\ndef load_query(): pass\ndef register(registry):\n    registry.register_provider('text',load_text)\n    registry.register_provider('query',load_query)\n","present":["review.provider_registry:OBSERVED"],"absent":["review.provider_registry:OPPORTUNITY"]},
+    {"id":"registry-duplicate-key","source":"def load_text(): pass\ndef load_query(): pass\ndef register(registry):\n    registry.register_provider('text',load_text)\n    registry.register_provider('text',load_query)\n","present":[],"absent":["review.provider_registry:OBSERVED"]},
+    {"id":"registry-unknown-loader","source":"def load_text(): pass\ndef register(registry):\n    registry.register_provider('text',load_text)\n    registry.register_provider('query',missing_loader)\n","present":[],"absent":["review.provider_registry:OBSERVED"]},
+    {"id":"string-example","source":"example=\"registry.register_provider('text',load_text); registry.register_provider('query',load_query)\"\n","present":[],"absent":["review.provider_registry:OBSERVED"]}
+  ]
+}

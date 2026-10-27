@@ -1,5 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
+import re
 
 ROLES = {"OWNED_SOURCE","TEST","GENERATED","VENDORED","TOOLING","DOCUMENTATION","BUILD_ARTIFACT"}
 
@@ -11,6 +12,13 @@ _VENDORED_PARTS = {"vendor","vendors","third_party","third-party"}
 _TOOLING_PARTS = {".mvn","gradle/wrapper",".github/workflows"}
 _BUILD_PARTS = {"target","build","dist","out",".next","coverage"}
 _DOC_ROOTS = {"docs","documentation","documentazione","projectdocs","project-docs"}
+
+
+def _extracted_vendor(parts):
+    """Recognize an explicit vendor staging tree, not arbitrary vendor-like app names."""
+    return (any(re.fullmatch(r'vendor[-_](?:update|cache|snapshot|download)s?', p) for p in parts)
+            and 'extracted' in parts
+            and any(re.search(r'(?:^|[-_])v?\d+\.\d+(?:\.\d+)?(?:$|[-_])',p) for p in parts))
 
 
 def classify_source(path: str, root: Path | None = None) -> dict:
@@ -26,7 +34,7 @@ def classify_source(path: str, root: Path | None = None) -> dict:
         role = "TOOLING"
     elif any(p in _GENERATED_PARTS or p.startswith(("jacoco","javadoc")) for p in parts) or "/jacoco/" in f"/{low}" or "/javadoc/" in f"/{low}":
         role = "GENERATED"
-    elif name.endswith((".min.js", ".min.css")) or any(p in _VENDORED_PARTS for p in parts) or any(x in low for x in ("/static/js/lib/","/static/vendor/","/public/vendor/","/assets/vendor/")):
+    elif name.endswith((".min.js", ".min.css")) or _extracted_vendor(parts) or any(p in _VENDORED_PARTS for p in parts) or any(x in low for x in ("/static/js/lib/","/static/vendor/","/public/vendor/","/assets/vendor/")):
         role = "VENDORED"
     elif _is_test(low, name):
         role = "TEST"

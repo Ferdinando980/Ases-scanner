@@ -66,7 +66,16 @@ def prepare_output(path: Path, *, clear=True) -> Path:
 
 
 def scan_project(root: Path, out: Path | None = None, source_uri: str | None = None,
-                 site_observations: dict | None = None) -> dict:
+                 site_observations: dict | None = None, *, progress=None, exclude=(), limits=None) -> dict:
+    from .scanners.filesystem import source_catalog
+    with source_catalog(root, exclusions=exclude, limits=limits):
+        return _scan_project(root, out, source_uri, site_observations, progress=progress, exclude=exclude)
+
+
+def _scan_project(root, out, source_uri, site_observations, *, progress, exclude):
+    def stage(name):
+        if progress is not None:
+            progress(name)
     root = root.absolute().resolve()
     if not root.is_dir():
         raise ValueError("Scan source must be an existing directory")
@@ -77,23 +86,35 @@ def scan_project(root: Path, out: Path | None = None, source_uri: str | None = N
     docs = out / "docs"
     docs.mkdir(parents=True, exist_ok=True)
 
+    stage("inventory")
     inventory = scan_filesystem(root)
     if site_observations is None:
         from .scanners.javascript import parser_profile
-        inventory["parser_profile"] = parser_profile()
+        from .scanners.filesystem import FILESYSTEM_PROFILE
+        inventory["parser_profile"] = {**parser_profile(), "filesystem": FILESYSTEM_PROFILE}
+        from .scanners.python_http import PROFILE as http_profile
+        inventory["parser_profile"]["python_http"] = http_profile
+        from .recovery.patterns import PROFILE as pattern_profile
+        inventory["parser_profile"]["patterns"] = pattern_profile
         ignore = root / ".asesignore"
-        inventory["exclusions"] = ignore.read_text(encoding="utf-8").splitlines() if ignore.is_file() else []
+        inventory["exclusions"] = (ignore.read_text(encoding="utf-8").splitlines() if ignore.is_file() else []) + list(exclude)
     graph = FactGraph()
     if site_observations is None:
         for scanner in (scan_java, scan_typescript, scan_python, scan_frontend):
+            stage({scan_java: "java", scan_typescript: "javascript", scan_python: "python", scan_frontend: "frontend"}[scanner])
             graph.merge(scanner(root))
+        stage("relations")
         recover_controls(root, graph)
         test_paths = set(inventory.get("tests", []))
         for node in graph.nodes:
             if node.path in test_paths:
                 node.metadata["is_test_code"] = True
         enrich_traceability(graph)
+        from .scanners.filesystem import unavailable_sources, source_unavailable
+        for missing in unavailable_sources(root):
+            source_unavailable(root,root/missing['path'],graph)
 
+    stage("model")
     model = build_semantic_model(root.name, inventory, graph, root if site_observations is None else None)
     if source_uri:
         model["project"]["source_uri"] = source_uri
@@ -104,6 +125,7 @@ def scan_project(root: Path, out: Path | None = None, source_uri: str | None = N
 
     # Schema path is resolved relative to installed package layout when available.
     candidate = Path(__file__).resolve().parents[2] / "schemas" / "semantic-model.schema.json"
+    stage("validation")
     validation = validate_model(model, candidate if candidate.exists() else None)
     if "semantic_quality" in model:
         model["semantic_quality"]["schema_status"] = validation["status"]
@@ -112,20 +134,27 @@ def scan_project(root: Path, out: Path | None = None, source_uri: str | None = N
     context_v2 = public_context(model, graph_dict, inventory, manifest)
     from .evidence import validate_context
     validate_context(context_v2)
+    stage("documents")
     sig = doc_signature(manifest)
+    engineering = None
+    if site_observations is None:
+        from .engineering.model import build_engineering
+        engineering = build_engineering(root, inventory, graph_dict, model, context_v2["snapshot_id"], progress)
+
+    stage("document-rendering")
 
     def dump_yaml(value):
         return yaml.safe_dump(value, sort_keys=False, allow_unicode=True)
 
     outputs = {
         out / "inventory.yaml": dump_yaml(inventory),
-        out / "fact-graph.json": json.dumps(graph_dict, indent=2),
+        out / "fact-graph.json": json.dumps(graph_dict, separators=(",", ":")),
         out / "semantic-model.yaml": dump_yaml(model),
         out / "semantic-quality.json": json.dumps(model.get("semantic_quality", {}), indent=2),
         out / "manifest.json": json.dumps(manifest, indent=2),
         out / "validation.json": json.dumps(validation, indent=2),
         out / "consumer-context.json": json.dumps(generic_context(model, manifest), indent=2),
-        out / "consumer-context.v2.json": json.dumps(context_v2, indent=2),
+        out / "consumer-context.v2.json": json.dumps(context_v2, separators=(",", ":")),
         out / "scanner-findings.json": json.dumps(scanner_findings(model), indent=2),
         # Signed (doc_signature): a consumer can tell these five are fully regenerated from the
         # current project state, and compare the embedded fingerprint against a fresh manifest.json
@@ -152,6 +181,11 @@ def scan_project(root: Path, out: Path | None = None, source_uri: str | None = N
         outputs[docs / "SITE-OVERVIEW.md"] = sig + "\n".join(lines) + "\n"
     for path, content in outputs.items():
         path.write_text(content, encoding="utf-8")
+    if engineering is not None:
+        from .engineering.service import write_documents
+        (out / "engineering-model.json").write_text(json.dumps(engineering, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        write_documents(engineering, docs, signature=sig)
+    stage("complete")
 
     return {
         "inventory": inventory,
@@ -159,5 +193,6 @@ def scan_project(root: Path, out: Path | None = None, source_uri: str | None = N
         "semantic_model": model,
         "manifest": manifest,
         "validation": validation,
+        "engineering_model": engineering,
         "output": str(out),
     }

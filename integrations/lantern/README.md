@@ -31,6 +31,10 @@ Fields currently reshaped by `adapt()`: `project`, `behaviors`, `trust_boundarie
 `conflicts`, `unknowns`, plus the source's own `schema`/`ases_version`/`generated_at` so a
 consumer can reason about freshness without re-deriving it.
 
+The optional 1.5 fields `claims[].design_review` and `design_review_coverage` are not yet
+reshaped by this small reference adapter; they remain available on the original context. Treat them as bounded design-review context, not as a security finding, implementation order,
+or proof of correctness. Missing coverage stays unavailable.
+
 A consumer should preserve ASES provenance and keep separate:
 `observed fact → inference → security hypothesis → verified finding`.
 

@@ -416,6 +416,10 @@ def scan_javascript(root: Path) -> FactGraph:
             source = path.read_bytes().decode("utf-8")
             tree = parse(source, path.suffix.lower())
             ast = list(walk(tree))
+        except OSError:
+            from .filesystem import source_unavailable
+            source_unavailable(root,path,graph)
+            continue
         except (ValueError, UnicodeError) as exc:
             graph.coverage[rel] = {"status": "UNKNOWN", "basis": str(exc), "omitted_count": None}
             unknown(rel, None, str(exc))
@@ -755,7 +759,7 @@ def scan_javascript(root: Path) -> FactGraph:
                 graph.add_edge(Edge(caller, xid, "calls", ev, {"basis": "imported-client-call" if client else "imported-module-call"}))
                 continue
             if isinstance(target, str) and target in node_map:
-                graph.add_edge(Edge(caller, target, "calls", ev, {"basis": "lexical-module-binding"}))
+                graph.add_edge(Edge(caller, target, "calls", ev, {"basis": "lexical-module-binding", "callee": fn_text}))
             elif fn_text not in {"require", "test", "it", "expect"} and not fn_text.startswith(("console.", "JSON.", "Object.", "Array.", "Math.")):
                 unknown(rel, node, "call_target_unresolved")
             prisma = re.fullmatch(r"prisma\.([A-Za-z_]\w*)\.([A-Za-z_]\w*)", fn_text)

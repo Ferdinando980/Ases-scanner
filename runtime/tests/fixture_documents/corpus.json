@@ -1,0 +1,77 @@
+{
+  "schema": "ases-document-corpus/1",
+  "label_review": "Authored and checked in the same development session; independent review pending",
+  "limitations": [
+    "Synthetic source fragments exercise named capabilities; they do not measure general requirement comprehension.",
+    "Requirement-ID labels are closed for these fixtures. Field, link and check denominators are separate.",
+    "No target application or target tests are executed. Historical results are imported declarations."
+  ],
+  "cases": [
+    {
+      "id": "requirements-contract-python",
+      "files": {
+        "requirements.yaml": "requirements:\n  - id: RF_ORD_1\n    statement: The clerk shall record an order.\n    actor: Clerk\n    priority: High\n    oracle: The saved order has an identifier.\n  - id: RNF_P_1\n    statement: Reply within 2 seconds with 20 users.\n    measurement_context: p95 on the declared machine\n",
+        "api.py": "def add(title: str) -> int:\n    \"\"\"RF_ORD_1\n    @pre title is not empty\n    @post returns the saved identifier\n    \"\"\"\n    if not title:\n        raise ValueError('title')\n    return 1\n"
+      },
+      "requirements": ["RF_ORD_1", "RNF_P_1"],
+      "fields": [
+        {"select":{"id":"RF_ORD_1"},"field":"fields.actor","expected":"Clerk"},
+        {"select":{"id":"RF_ORD_1"},"field":"satisfaction","expected":"not-verified"},
+        {"select":{"id":"RNF_P_1"},"field":"fields.measurement_context","expected":"p95 on the declared machine"},
+        {"select":{"name":"add","kind":"function"},"field":"signature","expected":"def add(title: str) -> int"}
+      ],
+      "links": [{"select":{"relation":"comment-reference","target":"RF_ORD_1","resolved":true},"expected":true}],
+      "checks": []
+    },
+    {
+      "id": "document-collision-not-satisfaction",
+      "files": {
+        "docs/RAD.md":"# Original requirements\nRF_USR_1 The user shall register an account.\nRNF_P_1 The service shall reply in 5 seconds.\n",
+        "docs/archive/RAD.md":"# Earlier declaration\nRF_USR_1 The user shall delete an account.\n",
+        "docs/TCS.md":"TC_1.1_1 This test mentions RF_MISS_9 but its definition is not supplied.\n"
+      },
+      "requirements":["RF_USR_1","RNF_P_1"],
+      "fields":[{"select":{"id":"RNF_P_1"},"field":"satisfaction","expected":"not-verified"}],
+      "links":[{"select":{"target":"RF_MISS_9","resolved":false},"expected":true}],
+      "checks":[{"kind":"declaration-variants","expected":true}]
+    },
+    {
+      "id":"plain-functional-project-no-pattern",
+      "files":{"lib.ts":"export function greet(name: string): string { return name; }\nexport function untyped(value) { return value; }\n"},
+      "requirements":[],
+      "fields":[
+        {"select":{"name":"greet","kind":"function"},"field":"return_type","expected":": string"},
+        {"select":{"name":"untyped","kind":"function"},"field":"return_type","expected":null}
+      ],
+      "links":[],"checks":[]
+    },
+    {
+      "id":"java-overloads-contracts",
+      "files":{"Store.java":"package example;\npublic class Store {\n /** @pre key exists\n  * @post returns the stored number\n  */\n public int read(String key) throws IllegalArgumentException { return 1; }\n public int read(int key) { return 1; }\n}\n"},
+      "requirements":[],
+      "fields":[{"select":{"name":"Store","kind":"class"},"field":"package","expected":"example"}],
+      "links":[],"checks":[]
+    },
+    {
+      "id":"reverse-engineering-without-requirement-labels",
+      "files":{"app.py":"from fastapi import FastAPI\napp=FastAPI()\n@app.post('/orders')\ndef create_order(title: str):\n    if not title:\n        raise ValueError('title required')\n    return {'id': 1}\n"},
+      "requirements":[],
+      "fields":[
+        {"select":{"name":"POST /orders","kind":"reconstructed-functional-requirement"},"field":"authority","expected":"static-inference"},
+        {"select":{"name":"POST /orders","kind":"reconstructed-functional-requirement"},"field":"inputs","expected":"title: str"},
+        {"select":{"name":"POST /orders","kind":"reconstructed-functional-requirement"},"field":"external_outcomes.0.output_fields","expected":["id"]},
+        {"select":{"name":"POST /orders","kind":"reconstructed-functional-requirement"},"field":"errors.0.conditions","expected":["not title"]}
+      ],"links":[],"checks":[]
+    },
+    {
+      "id":"historical-junit-and-side-definitions",
+      "files":{
+        "reports/test.xml":"<testsuite timestamp=\"2021-01-01\" name=\"old-run\"><testcase name=\"save\"/><testcase name=\"delete\"><failure/></testcase></testsuite>",
+        "tests/browser.side":"{\"tests\":[{\"name\":\"open page\",\"commands\":[]}]}",
+        "docs/TP.md":"A test is pass when the actual value is different from the expected value.\n"
+      },
+      "requirements":[],"fields":[],"links":[],
+      "checks":[{"kind":"possible-inverted-oracle","expected":true}]
+    }
+  ]
+}

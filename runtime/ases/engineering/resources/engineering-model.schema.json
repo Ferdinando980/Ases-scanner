@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ases:engineering-model:1.0",
+  "type": "object",
+  "required": ["schema", "snapshot_id", "model_digest", "sources", "requirements", "api", "links", "issues", "coverage"],
+  "properties": {
+    "schema": {"const": "ases-engineering-model/1.0"},
+    "snapshot_id": {"type": "string"},
+    "model_digest": {"type": "string"},
+    "sources": {"type": "array", "items": {"$ref": "#/$defs/source"}},
+    "requirements": {"type": "array", "items": {"$ref": "#/$defs/record"}},
+    "recovered_requirements": {"type": "array", "items": {"$ref": "#/$defs/record"}},
+    "operations": {"type": "array", "items": {"$ref": "#/$defs/record"}},
+    "user_requirements": {"type": "array", "items": {"$ref": "#/$defs/record"}},
+    "narrative_profile": {"type": "string"},
+    "operations_profile": {"type": "string"},
+    "behavior_parser_profiles": {"type": "object"},
+    "analysis_scope": {"type": "object"},
+    "document_profile": {"type": "string"},
+    "requirement_classification_profile": {"type": "string"},
+    "api": {"type": "array", "items": {"$ref": "#/$defs/record"}},
+    "scenarios": {"type": "array", "items": {"$ref": "#/$defs/record"}},
+    "test_cases": {"type": "array", "items": {"$ref": "#/$defs/record"}},
+    "test_results": {"type": "array", "items": {"$ref": "#/$defs/record"}},
+    "quality_controls": {"type": "array"},
+    "links": {"type": "array"},
+    "issues": {"type": "array"},
+    "coverage": {"type": "object"}
+  },
+  "$defs": {
+    "record": {"type": "object", "required": ["id", "authority", "locations"], "properties": {
+      "id": {"type": "string"},
+      "authority": {"enum": ["document-declaration", "source-syntax", "static-inference", "user-confirmation", "imported-result"]},
+      "locations": {"type": "array", "items": {"type": "object", "required": ["path", "sha256"]}}
+    }},
+    "source": {"type": "object", "required": ["id", "path", "sha256", "extraction", "interpretation", "units"], "properties": {
+      "extraction": {"enum": ["complete", "partial", "unsupported", "failed"]},
+      "interpretation": {"enum": ["partial", "not-run"]},
+      "units": {"type": "array"}
+    }}
+  }
+}

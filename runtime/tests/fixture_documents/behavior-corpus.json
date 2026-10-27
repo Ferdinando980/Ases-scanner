@@ -1,0 +1,411 @@
+{
+  "schema": "ases-document-corpus/1",
+  "label_review": "Manual local-flow oracles frozen before baseline evaluation; same-session author; independent review pending",
+  "limitations": [
+    "These are 11 owned adversarial fixtures, not a statistical sample of software.",
+    "Outcome, escaping-error and possible-effect claims are scored only for the selected entry body; transitive exception propagation and dynamic behavior are outside this closed oracle.",
+    "Condition normalization removes parentheses and double negation in predicate context, not arbitrary program equivalence.",
+    "No target code or target tests are executed by the scanner."
+  ],
+  "cases": [
+    {
+      "id": "python-unreachable-after-return",
+      "files": {
+        "api.py": "def read():\n    return {\"id\": 1}\n    store.delete()\n    raise RuntimeError(\"dead\")\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "read"
+          },
+          "oracle": "Manual inspection of this owned fixture: only reachable local exits and calls are labelled.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{'id': 1}",
+              "conditions": [],
+              "output_fields": [
+                "id"
+              ]
+            }
+          ],
+          "errors": [],
+          "effects": []
+        }
+      ]
+    },
+    {
+      "id": "python-two-exiting-branches",
+      "files": {
+        "api.py": "def choose(flag):\n    if flag:\n        return {\"yes\": 1}\n    else:\n        return {\"no\": 0}\n    store.delete()\n    return {\"dead\": True}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "choose"
+          },
+          "oracle": "Manual inspection of this owned fixture: only reachable local exits and calls are labelled.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{'yes': 1}",
+              "conditions": [
+                "flag"
+              ],
+              "output_fields": [
+                "yes"
+              ]
+            },
+            {
+              "expression": "{'no': 0}",
+              "conditions": [
+                "not flag"
+              ],
+              "output_fields": [
+                "no"
+              ]
+            }
+          ],
+          "errors": [],
+          "effects": []
+        }
+      ]
+    },
+    {
+      "id": "python-guard-error",
+      "files": {
+        "api.py": "def read(title):\n    if not title:\n        raise ValueError(\"missing\")\n    return {\"id\": 1}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "read"
+          },
+          "oracle": "Manual inspection of this owned fixture: only reachable local exits and calls are labelled.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{'id': 1}",
+              "conditions": [
+                "title"
+              ],
+              "output_fields": [
+                "id"
+              ]
+            }
+          ],
+          "errors": [
+            {
+              "expression": "ValueError('missing')",
+              "conditions": [
+                "not title"
+              ]
+            }
+          ],
+          "effects": []
+        }
+      ]
+    },
+    {
+      "id": "python-short-circuit-effect",
+      "files": {
+        "api.py": "def remove(flag, store):\n    flag and store.delete()\n    return flag\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "remove"
+          },
+          "oracle": "Manual inspection of this owned fixture: only reachable local exits and calls are labelled.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "flag",
+              "conditions": [],
+              "output_fields": []
+            }
+          ],
+          "errors": [],
+          "effects": [
+            {
+              "callee": "store.delete",
+              "conditions": [
+                "flag"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "python-conditional-expression",
+      "files": {
+        "api.py": "def choose(flag):\n    return {\"yes\": 1} if flag else {\"no\": 0}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "choose"
+          },
+          "oracle": "Manual inspection of this owned fixture: only reachable local exits and calls are labelled.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{'yes': 1}",
+              "conditions": [
+                "flag"
+              ],
+              "output_fields": [
+                "yes"
+              ]
+            },
+            {
+              "expression": "{'no': 0}",
+              "conditions": [
+                "not flag"
+              ],
+              "output_fields": [
+                "no"
+              ]
+            }
+          ],
+          "errors": [],
+          "effects": []
+        }
+      ]
+    },
+    {
+      "id": "python-finally-overrides-return",
+      "files": {
+        "api.py": "def finish():\n    try:\n        return {\"old\": 1}\n    finally:\n        return {\"final\": 2}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "finish"
+          },
+          "oracle": "Manual inspection of this owned fixture: only reachable local exits and calls are labelled.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{'final': 2}",
+              "conditions": [],
+              "output_fields": [
+                "final"
+              ]
+            }
+          ],
+          "errors": [],
+          "effects": []
+        }
+      ]
+    },
+    {
+      "id": "javascript-early-response",
+      "files": {
+        "app.js": "const express=require('express'); const app=express();\napp.post('/orders',(req,res)=>{if(!req.body.title) return res.status(400).json({error:'missing'}); return res.json({id:1});});\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "POST /orders"
+          },
+          "oracle": "Manual inspection of this owned fixture: only reachable local exits and calls are labelled.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "res.status(400).json({error:'missing'})",
+              "conditions": [
+                "!req.body.title"
+              ],
+              "output_fields": [
+                "error"
+              ]
+            },
+            {
+              "expression": "res.json({id:1})",
+              "conditions": [
+                "req.body.title"
+              ],
+              "output_fields": [
+                "id"
+              ]
+            }
+          ],
+          "errors": [],
+          "effects": []
+        }
+      ]
+    },
+    {
+      "id": "javascript-response-without-return",
+      "files": {
+        "app.js": "const express=require('express'); const app=express();\napp.get('/ready',(req,res)=>{res.json({ready:true});});\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "GET /ready"
+          },
+          "oracle": "Manual inspection of this owned fixture: only reachable local exits and calls are labelled.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "res.json({ready:true})",
+              "conditions": [],
+              "output_fields": [
+                "ready"
+              ]
+            }
+          ],
+          "errors": [],
+          "effects": []
+        }
+      ]
+    },
+    {
+      "id": "typescript-arrow-shorthand",
+      "files": {
+        "api.ts": "export const identify = (id: number) => ({id});\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "identify"
+          },
+          "oracle": "Manual inspection of this owned fixture: only reachable local exits and calls are labelled.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{id}",
+              "conditions": [],
+              "output_fields": [
+                "id"
+              ]
+            }
+          ],
+          "errors": [],
+          "effects": []
+        }
+      ]
+    },
+    {
+      "id": "javascript-conditional-expression",
+      "files": {
+        "api.js": "export function choose(flag){return flag ? {yes:1} : {no:0};}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "choose"
+          },
+          "oracle": "Manual inspection of this owned fixture: only reachable local exits and calls are labelled.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{yes:1}",
+              "conditions": [
+                "flag"
+              ],
+              "output_fields": [
+                "yes"
+              ]
+            },
+            {
+              "expression": "{no:0}",
+              "conditions": [
+                "!flag"
+              ],
+              "output_fields": [
+                "no"
+              ]
+            }
+          ],
+          "errors": [],
+          "effects": []
+        }
+      ]
+    },
+    {
+      "id": "javascript-unreachable-after-return",
+      "files": {
+        "api.js": "export function read(store){return {id:1};store.delete();throw new Error('dead');}\n"
+      },
+      "requirements": [],
+      "behaviors": [
+        {
+          "select": {
+            "name": "read"
+          },
+          "oracle": "Manual inspection of this owned fixture: only reachable local exits and calls are labelled.",
+          "closed": [
+            "outcomes",
+            "errors",
+            "effects"
+          ],
+          "outcomes": [
+            {
+              "expression": "{id:1}",
+              "conditions": [],
+              "output_fields": [
+                "id"
+              ]
+            }
+          ],
+          "errors": [],
+          "effects": []
+        }
+      ]
+    }
+  ]
+}

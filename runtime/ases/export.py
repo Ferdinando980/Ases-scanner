@@ -53,13 +53,15 @@ def generic_context(model: dict, manifest: dict | None = None) -> dict:
     }
     if model.get("site_observations") is not None:
         context["site_observations"] = model["site_observations"]
+    if "design_review_coverage" in model:
+        context["design_review_coverage"] = model["design_review_coverage"]
     return context
 
-def export_json(model_path: Path, out: Path, manifest: dict | None = None, schema: str = "1.5"):
+def export_json(model_path: Path, out: Path, manifest: dict | None = None, schema: str = "1.5", *, max_snapshot_bytes=64 * 1024 * 1024):
     if schema == "2.0":
         from .semantic_diff import load_context
         snapshot_path = model_path if model_path.is_dir() or model_path.suffix == ".json" else model_path.parent
-        data = load_context(snapshot_path)
+        data = load_context(snapshot_path, max_bytes=max_snapshot_bytes)
         if data["schema"] != "ases-consumer-context/2.0":
             raise ValueError("Public v2 export requires an existing v2 snapshot; source is never reread implicitly")
         out.write_text(json.dumps(data, indent=2), encoding="utf-8")

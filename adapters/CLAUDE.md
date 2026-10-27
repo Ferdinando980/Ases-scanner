@@ -4,7 +4,7 @@ Read and obey `.ases/AGENTS.md`.
 
 For each coding task:
 
-- inspect relevant repository files before editing;
+- inspect relevant repository files before editing: read a file before changing it, and search for all callers before changing a function;
 - use `.ases/orchestrator/TASK-ROUTER.md` to choose rigor and skills;
 - keep process notes concise unless the user asks for them;
 - use `.ases/GATES.md` as mandatory decision checkpoints;

@@ -3,6 +3,9 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from pathlib import Path
 import re
+import ast
+import io
+import tokenize
 
 from ..model import FactGraph
 from ..epistemology import stable_fingerprint, evidence_strength
@@ -12,10 +15,15 @@ from ..scanners.javascript import EXTENSIONS as JS_EXTENSIONS, syntax_text
 
 CODE_EXTS={'.java','.kt','.py','.cs','.cpp','.cc','.cxx'} | JS_EXTENSIONS
 TEST_MARKERS=('/test/','/tests/','src/test/','__tests__','.test.','.spec.')
+PROFILE='pattern-opportunities/4'
+AUXILIARY_PARTS=frozenset({'work','bench','benchmark','benchmarks','examples','samples','experiments','research'})
 
 # Human-readable rule metadata is emitted with each finding through rule_id/signals.
 # Rules are intentionally precision-first: weak signals become HINT, not OPPORTUNITY.
 PATTERN_RULES={
+    'review.service_responsibilities': ('ARCHITECTURAL','Service Layer'),
+    'review.strategy_variants': ('BEHAVIORAL','Strategy'),
+    'review.provider_registry': ('ARCHITECTURAL','Provider Registry'),
     'architecture.layered': ('ARCHITECTURAL','Layered Architecture'),
     'architecture.mvc': ('ARCHITECTURAL','MVC'),
     'architecture.repository': ('ARCHITECTURAL','Repository'),
@@ -53,7 +61,18 @@ def recover_pattern_findings(root: Path, graph: FactGraph, inventory: dict | Non
     findings=[]
     findings.extend(_architecture_findings(root, graph))
     findings.extend(_observed_design_patterns(root, graph))
-    findings.extend(_code_opportunities(root, graph))
+    review_coverage=[]
+    findings.extend(_code_opportunities(root, graph, review_coverage))
+    if inventory is not None:
+        inventory['design_review_coverage']=review_coverage
+    for finding in findings:
+        if finding['status']=='OPPORTUNITY' and any(
+                {p.casefold() for p in Path(re.sub(r':\d+$','',ev)).parts[:-1]} & AUXILIARY_PARTS
+                for ev in finding.get('evidence',[])):
+            finding.update(status='HINT',confidence='low')
+            finding['reason']+=' Evidence is in an auxiliary/experimental tree; application relevance requires confirmation.'
+            finding['counter_evidence'].append('auxiliary/experimental source scope; not an application refactoring recommendation')
+            finding['signals']['negative'].append('application relevance unverified')
     return _dedupe(findings)
 
 
@@ -82,6 +101,7 @@ def _legacy_opportunity(f):
         'smell':f.get('smell'), 'reason':f['reason'], 'evidence':f['evidence'],
         'confidence':f['confidence'], 'guidance':f.get('guidance',''), 'rule_id':f['rule_id'],
         'scope':f.get('scope','project'), 'signals':f.get('signals',{}),
+        **({'design_review':f['design_review']} if 'design_review' in f else {}),
     }
 
 
@@ -111,7 +131,7 @@ def _finding(rule_id, status, confidence, reason, evidence, *, smell=None, guida
 
 
 def _pattern_level(rule_id: str, pattern: str) -> str:
-    if rule_id.startswith('architecture.'):
+    if rule_id.startswith('architecture.') or rule_id in {'review.service_responsibilities','review.provider_registry'}:
         return 'ARCHITECTURE' if pattern in {'Layered Architecture','MVC'} else 'APPLICATION_PATTERN'
     if pattern == 'Factory':
         return 'DESIGN_IDIOM'
@@ -231,7 +251,9 @@ def _observed_design_patterns(root: Path, graph: FactGraph) -> list[dict]:
     return out
 
 
-def _code_opportunities(root: Path, graph: FactGraph) -> list[dict]:
+def _code_opportunities(root: Path, graph: FactGraph, review_coverage=None) -> list[dict]:
+    from .design_review import responsibility_reviews, coverage_record
+    review_coverage=review_coverage if review_coverage is not None else []
     files=[]
     for path in iter_owned_files(root):
         if path.suffix.lower() not in CODE_EXTS:
@@ -239,11 +261,21 @@ def _code_opportunities(root: Path, graph: FactGraph) -> list[dict]:
         rel=path.relative_to(root).as_posix()
         if _is_test(rel):
             continue
-        if path.suffix.lower() in JS_EXTENSIONS:
-            from ..scanners.javascript import MAX_BYTES
-            if path.stat().st_size > MAX_BYTES or graph.coverage.get(rel, {}).get('status') == 'UNKNOWN':
-                continue  # Never bypass the admitted parser scope through a textual fallback.
-        text=path.read_text(encoding='utf-8',errors='ignore')
+        if graph.coverage.get(rel,{}).get('status')=='UNKNOWN':
+            review_coverage.append(coverage_record(rel,'UNKNOWN','source_structure_unavailable'))
+            continue
+        try:
+            if path.suffix.lower() in JS_EXTENSIONS:
+                from ..scanners.javascript import MAX_BYTES
+                if path.stat().st_size > MAX_BYTES or graph.coverage.get(rel, {}).get('status') == 'UNKNOWN':
+                    review_coverage.append(coverage_record(rel,'NOT_SUPPORTED','language_not_supported'))
+                    continue  # Never bypass the admitted parser scope through a textual fallback.
+            text=path.read_text(encoding='utf-8',errors='ignore')
+        except OSError:
+            from ..scanners.filesystem import source_unavailable
+            source_unavailable(root,path,graph)
+            review_coverage.append(coverage_record(rel,'UNKNOWN','source_unavailable_during_scan'))
+            continue
         files.append((path,rel,text))
 
     # Index proven emission sites once; never silence other direct calls in the file.
@@ -263,7 +295,7 @@ def _code_opportunities(root: Path, graph: FactGraph) -> list[dict]:
     for path,rel,text in files:
         out.extend(_dispatch_findings(rel,text))
         out.extend(_factory_findings(rel,text,path.stem))
-        observer_text = syntax_text(text, path.suffix.lower(), remove_strings=True) if path.suffix.lower() in JS_EXTENSIONS else text
+        observer_text = _notification_text(rel,text)
         out.extend(_observer_findings(rel,observer_text,proven_emissions))
         out.extend(_chain_findings(rel,text))
         out.extend(_template_findings(rel,text,path.stem))
@@ -271,73 +303,179 @@ def _code_opportunities(root: Path, graph: FactGraph) -> list[dict]:
         out.extend(_decorator_findings(rel,text,path.stem))
         out.extend(_proxy_findings(rel,text,path.stem))
 
+    for assessment in responsibility_reviews(files,coverage=review_coverage):
+        review = assessment.pop('review')
+        finding = _finding(**assessment)
+        finding['design_review'] = review
+        out.append(finding)
+
     # Facade is intentionally project-level: many collaborators in one file is not enough.
     facade=_facade_finding(graph)
     if facade: out.append(facade)
     return out
 
 
+def _notification_text(rel,source):
+    """Remove comments/literals before looking for notification call spellings."""
+    suffix=Path(rel).suffix.lower()
+    if suffix in JS_EXTENSIONS:return syntax_text(source,suffix,remove_strings=True)
+    if suffix=='.py':
+        lines=source.splitlines(keepends=True);offsets=[0]
+        for line in lines:offsets.append(offsets[-1]+len(line))
+        masked=list(source)
+        try:
+            for token in tokenize.generate_tokens(io.StringIO(source).readline):
+                if token.type not in {tokenize.STRING,tokenize.COMMENT,getattr(tokenize,'FSTRING_MIDDLE',-1),getattr(tokenize,'TSTRING_MIDDLE',-1)}:continue
+                begin=offsets[token.start[0]-1]+token.start[1]
+                end=offsets[token.end[0]-1]+token.end[1]
+                for index in range(begin,end):
+                    if masked[index] not in '\r\n':masked[index]=' '
+        except (tokenize.TokenError,IndentationError):return ''
+        return ''.join(masked)
+    if suffix=='.java':
+        from ..scanners.java_syntax import parse,walk
+        data=bytearray(source.encode('utf-8'))
+        try:
+            for node in walk(parse(source)):
+                if node.type not in {'line_comment','block_comment','string_literal','character_literal'}:continue
+                for index in range(node.start_byte,node.end_byte):
+                    if data[index] not in {10,13}:data[index]=32
+        except ValueError:return ''
+        return data.decode('utf-8')
+    return source
+
+
+def _dispatch_sites(rel,source):
+    """Count direct cases in real syntax nodes; never scan an arbitrary text window."""
+    suffix=Path(rel).suffix.lower()
+    sites=[]
+    if len(source.encode('utf-8'))>5*1024*1024:return sites
+    try:
+        if suffix=='.py':
+            tree=ast.parse(source)
+            parents={child:node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
+            for node in ast.walk(tree):
+                if not isinstance(node,ast.Match):continue
+                labels=tuple(sorted(ast.dump(case.pattern,include_attributes=False) for case in node.cases
+                                    if not isinstance(case.pattern,ast.MatchAs) or case.pattern.pattern is not None))
+                owner=parents.get(node)
+                while owner is not None and not isinstance(owner,(ast.FunctionDef,ast.AsyncFunctionDef)):
+                    owner=parents.get(owner)
+                sites.append((ast.unparse(node.subject),labels,node.lineno,id(owner) if owner else None,'match'))
+        elif suffix in JS_EXTENSIONS or suffix=='.java':
+            if suffix=='.java':
+                from ..scanners.java_syntax import parse,walk
+                tree=parse(source)
+                owners={'method_declaration','constructor_declaration'}
+            else:
+                from ..scanners.javascript import parse,walk,FUNCTIONS
+                tree=parse(source,suffix);owners=FUNCTIONS
+            if tree.has_error:return []
+            for node in walk(tree):
+                if node.type not in {'switch_statement','switch_expression'}:continue
+                body=node.child_by_field_name('body')
+                value=node.child_by_field_name('value') or node.child_by_field_name('condition')
+                if body is None or value is None:continue
+                labels=[]
+                for group in body.named_children:
+                    if group.type=='switch_case':
+                        label=group.child_by_field_name('value')
+                        if label:labels.append(label.text.decode('utf-8'))
+                    elif group.type in {'switch_block_statement_group','switch_rule'}:
+                        labels.extend(c.text.decode('utf-8') for c in group.named_children
+                                      if c.type=='switch_label' and c.text.startswith(b'case'))
+                owner=node.parent
+                while owner is not None and owner.type not in owners:owner=owner.parent
+                sites.append((value.text.decode('utf-8').strip('()'),tuple(sorted(labels)),
+                              node.start_point[0]+1,owner.start_byte if owner else None,'switch'))
+    except (SyntaxError,ValueError,RecursionError):
+        return []
+    return sites
+
+
 def _dispatch_findings(rel,text):
     out=[]
-    switches=[]
-    for m in re.finditer(r'\bswitch\s*\(([^)]{1,120})\)',text):
-        window=text[m.end():m.end()+3000]
-        cases=len(re.findall(r'\bcase\b',window))
-        if cases>=3: switches.append((m,m.group(1),cases,'switch'))
-    for m in re.finditer(r'(?m)^([ \t]*)match\s+([^:\n]{1,120})\s*:\s*$',text):
-        indent=len(m.group(1).replace('\t','    ')); cases=0
-        for line in text[m.end():].splitlines():
-            stripped=line.lstrip(' \t')
-            if not stripped: continue
-            if len(line)-len(stripped)<=indent: break
-            cases += stripped.startswith('case ')
-        if cases>=3: switches.append((m,m.group(2),cases,'match'))
-    for m,selector,cases,kind in switches:
-        low=selector.lower(); line=_line(text,m.start())
+    switches=_dispatch_sites(rel,text)
+    for selector,labels,line,owner,kind in switches:
+        cases=len(labels)
+        if cases<3:continue
+        low=selector.lower()
         if re.search(r'\b(state|status|phase)\b',low):
             rule='opportunity.state_dispatch'; smell='state-dispatch'
         elif re.search(r'\b(command|action|operation)\b',low):
             rule='opportunity.command_dispatch'; smell='operation-dispatch'
         else:
             rule='opportunity.strategy_dispatch'; smell='variant-dispatch'
-        status='OPPORTUNITY' if cases>=4 or rule!='opportunity.strategy_dispatch' else 'HINT'
+        repeated=[site for site in switches if site[1]==labels and site[0].lower()==low
+                  and site[3] is not None and owner is not None and site[3]!=owner]
+        supported=bool(repeated) and (cases>=4 or rule!='opportunity.strategy_dispatch')
+        status='OPPORTUNITY' if supported else 'HINT'
         conf='medium' if status=='OPPORTUNITY' else 'low'
         out.append(_finding(rule,status,conf,
             f"A {cases}-branch {kind} selects behavior from {selector.strip()!r}. The branching shape may benefit from {PATTERN_RULES[rule][1]} if variants keep growing or recur elsewhere.",
-            [f'{rel}:{line}'], smell=smell,
+            [f'{rel}:{line}',*[f'{rel}:{site[2]}' for site in repeated]], smell=smell,
             guidance='Keep the conditional when variants are few, local, and stable; introduce the pattern only when behavior varies independently or dispatch is duplicated.',
-            signals={'positive':[f'{cases} behavior branches',f'selector={selector.strip()}'],'negative':(['only 3 branches'] if cases==3 else [])},scope='file'))
+            signals={'positive':[f'{cases} direct syntax cases',f'selector={selector.strip()}']+(['same selector/cases in distinct callables'] if repeated else []),
+                     'negative':(['only 3 branches'] if cases==3 and rule=='opportunity.strategy_dispatch' else [])+([] if repeated else ['no repeated selector/case set across distinct callables'])},
+            counter_evidence=['business equivalence, variation pressure and refactoring benefit not established'],
+            assumptions=['Repeated syntax is an indication of duplicated selection policy, not proof of semantic equivalence.'],scope='file'))
     return out
 
 
 def _factory_findings(rel,text,stem):
     if 'factory' in stem.lower(): return []
-    # Strong factory evidence is branch-local selection of alternative concrete products,
-    # not merely many unrelated constructors somewhere in the same file.
-    branch_targets=[]
-    for m in re.finditer(r'(?is)(?:case\b[^:]{0,180}:|\bif\s*\([^)]*\)|\belse\s+if\s*\([^)]*\))(?P<body>.{0,420})',text):
-        body=m.group('body')
-        branch_targets.extend(re.findall(r'\b(?:return\s+)?new\s+([A-Z][A-Za-z0-9_]*)\s*\(',body))
-    meaningful=_meaningful_creations(branch_targets)
-    if len(meaningful)<2: return []
-    common=_common_suffix(meaningful)
-    # Same returned/assigned role is established by related naming or repeated branch-return construction.
-    returned=len(set(re.findall(r'(?is)(?:case\b[^:]{0,180}:|\bif\s*\([^)]*\)|\belse\s+if\s*\([^)]*\)).{0,260}?\breturn\s+new\s+([A-Z][A-Za-z0-9_]*)\s*\(',text)))>=2
-    if not (common or returned): return []
-    first=min(text.find(f'new {x}') for x in meaningful if text.find(f'new {x}')>=0)
-    return [_finding('creation.factory_idiom','OPPORTUNITY','medium',
-        f"Conditional creation selects among {len(meaningful)} alternative concrete targets ({', '.join(meaningful[:6])}). A factory may centralize this creation policy if the selection is duplicated or independently changing.",
-        [f'{rel}:{_line(text,first)}'], smell='conditional-alternative-construction',
-        guidance='Keep constructors direct when selection is local and stable; introduce a factory only for one product role with repeated/configurable creation policy.',
-        signals={'positive':['branch-local conditional creation',f'{len(meaningful)} alternative targets'] + ([f'common role suffix {common}'] if common else ['branch-return alternatives']),'negative':[]},scope='file')]
+    suffix=Path(rel).suffix.lower()
+    if suffix not in JS_EXTENSIONS|{'.java'}:return []
+    try:
+        if suffix=='.java':
+            from ..scanners.java_syntax import parse,walk
+            tree=parse(text);owners={'method_declaration','constructor_declaration'}
+        else:
+            from ..scanners.javascript import parse,walk,FUNCTIONS
+            tree=parse(text,suffix);owners=FUNCTIONS
+        if tree.has_error:return []
+        groups=defaultdict(list)
+        for node in walk(tree):
+            if node.type not in {'new_expression','object_creation_expression'}:continue
+            constructor=node.child_by_field_name('constructor') or node.child_by_field_name('type')
+            if constructor is None or constructor.type not in {'identifier','type_identifier'}:continue
+            name=constructor.text.decode('utf-8')
+            if not _meaningful_creation(name):continue
+            parent=node.parent
+            if parent.type=='return_statement':role='return'
+            elif parent.type in {'assignment_expression','variable_declarator'}:
+                target=parent.child_by_field_name('left') or parent.child_by_field_name('name')
+                if target is None or target.type not in {'identifier'}:continue
+                role='assign:'+target.text.decode('utf-8')
+            else:continue
+            ancestor=parent.parent;conditional=False
+            while ancestor is not None and ancestor.type not in owners:
+                conditional |= ancestor.type in {'if_statement','switch_case','switch_rule','switch_block_statement_group'}
+                ancestor=ancestor.parent
+            if conditional and ancestor is not None:
+                groups[(ancestor.start_byte,role)].append((name,node.start_point[0]+1))
+    except ValueError:return []
+    out=[]
+    for (_,role),sites in groups.items():
+        names=sorted({name for name,line in sites})
+        if len(names)<2:continue
+        out.append(_finding('creation.factory_idiom','OPPORTUNITY','medium',
+            f"Conditional branches in one callable construct {len(names)} alternative concrete products ({', '.join(names[:6])}) for the same {role} role. A factory may help if this policy is duplicated or independently changing.",
+            [f'{rel}:{line}' for name,line in sites],smell='conditional-alternative-construction',
+            guidance='Keep constructors direct when selection is local and stable; introduce a factory only for one product role with repeated/configurable creation policy.',
+            signals={'positive':['syntax-local conditional creation in one callable',f'{len(names)} alternative products',f'common role: {role}'],
+                     'negative':['independent variation or duplication of this creation policy not established']},scope='file'))
+    return out
 
 def _observer_findings(rel,text,proven_emissions=()):
     # Require distinct listener/subscriber targets or distinct notification endpoints.
-    matches = list(re.finditer(r'(?i)\b([A-Za-z_]\w*)\.(?:notify|update|on[A-Z]\w*|publish|emit)\s*\(',text))
+    matches = list(re.finditer(r'\b([A-Za-z_]\w*)\.(notify|update|on[A-Z]\w*|publish|emit)\s*\(',text))
     occurrences = Counter((match.group(1), f'{rel}:{_line(text,match.start())}') for match in matches)
     notify_receivers=set()
     for match in matches:
         receiver = match.group(1)
+        if match.group(2)=='update' and not re.search(r'listener|subscriber|observer',receiver,re.I):
+            continue  # Mapping/data updates do not establish notification consumers.
         site = (receiver, f'{rel}:{_line(text,match.start())}')
         if site not in proven_emissions or occurrences[site] != 1 or not re.match(re.escape(receiver) + r'\.emit\s*\(', match.group(0)):
             notify_receivers.add(receiver)
@@ -497,6 +635,7 @@ def _meaningful_creations(names):
 def _meaningful_creation(name):
     low=name.lower()
     if low in _FACTORY_NOISE: return False
+    if re.fullmatch(r'(?:u?int(?:8|16|32)|uint8clamped|float(?:16|32|64)|bigint64|biguint64)array',low):return False
     if low.endswith(_FACTORY_SUFFIX_NOISE): return False
     return True
 
@@ -518,13 +657,23 @@ def _line(text,pos):
 
 
 def _dedupe(items):
-    # Prefer stronger states/confidence for the same rule + evidence anchor.
+    # One stable rule/file fingerprint, retaining all evidence locations.
     state_rank={'OBSERVED':3,'OPPORTUNITY':2,'HINT':1}
     conf_rank={'high':3,'medium':2,'low':1}
     chosen={}
     for item in items:
-        key=(item['rule_id'], tuple(item.get('evidence',[])[:1]))
+        key=item['fingerprint']
         prev=chosen.get(key)
-        if not prev or (state_rank[item['status']],conf_rank[item['confidence']]) > (state_rank[prev['status']],conf_rank[prev['confidence']]):
+        if prev is None:
             chosen[key]=item
+            continue
+        if (state_rank[item['status']],conf_rank[item['confidence']]) > (state_rank[prev['status']],conf_rank[prev['confidence']]):
+            winner,other=item,prev
+        else:winner,other=prev,item
+        for field in ('evidence','counter_evidence','assumptions'):
+            winner[field]=sorted(set(winner.get(field,[])+other.get(field,[])))
+        winner['signals']={direction:sorted(set(winner.get('signals',{}).get(direction,[])+other.get('signals',{}).get(direction,[])))
+                           for direction in ('positive','negative')}
+        winner['evidence_strength']=evidence_strength(winner['evidence'])
+        chosen[key]=winner
     return sorted(chosen.values(), key=lambda x:(x['category'],x['pattern'],x['status'],x['evidence'][0] if x['evidence'] else ''))
