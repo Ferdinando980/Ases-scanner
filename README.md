@@ -16,6 +16,16 @@ and integration contracts are further down. [Italiano](README.it.md) ·
 [Desk guide](docs/DESK.md) · [Documents](docs/DOCUMENTS.md) ·
 [Measurements and limits](docs/ACCURACY.md).
 
+[![ASES: a project overview, recovered routes and what still needs checking.](docs/images/ases-desk.jpg)](docs/images/ases-desk.jpg)
+
+*One scan, a first reading. This is the small public Spring fixture included in
+the tests: structure, next steps and limits together. Green lights are not handed
+out on trust.*
+
+[Quick start](#try-it-in-your-browser) · [Requirements and documents](#requirements-are-sentences-not-a-stamp-collection) ·
+[Patterns](#what-pattern-suggestions-actually-mean) · [Local models](#local-models-and-http-observations) ·
+[Validation](#validation-and-current-state)
+
 ## Why I built it
 
 Some projects begin with an idea and no code. Others arrive with plenty of code and a README last seen alive three refactors ago. I wanted a useful way to work from either end.
@@ -82,9 +92,17 @@ and decisions: source code cannot testify to what stakeholders originally intend
 
 The analyzed project stays untouched. Desk reports are temporary: download them to keep them. A failed or stopped analysis preserves the last completed result. Ctrl+C in the terminal ends the session and removes its temporary files; closing the browser tab alone does not stop the process. The [desk guide](docs/DESK.md) covers setup, results, limits and error recovery.
 
-[![The ASES desk showing a summary, next steps and explicit limits.](docs/images/ases-desk.jpg)](docs/images/ases-desk.jpg)
+### From the result to the source line
 
-Actual screenshot using the public `runtime/tests/fixture_spring` test fixture to demonstrate the workflow. [See the route, source and evidence view](docs/images/ases-desk-evidence.jpg).
+Choose a route, open its evidence and follow what it reaches or what calls it.
+Check the reconstruction against the source without having to decipher a raw
+graph just to find where the request begins.
+
+[![Code map: POST /users, its Java controller evidence and navigable static links.](docs/images/ases-desk-evidence.jpg)](docs/images/ases-desk-evidence.jpg)
+
+*The route belongs to the public `runtime/tests/fixture_spring` fixture.
+Arrows represent static links, not executed HTTP requests. Screenshots use the
+Italian interface; the desk also supports English.*
 
 ## Two parts, three starting points
 
@@ -134,9 +152,30 @@ does not get to make the decision on its own.
 
 For **reverse engineering**, it starts from supported code paths: a request or public call, conditions, results, errors and calls with possible effects. It builds behavior sentences and links them to the evidence. For example, it can reconstruct that a handler checks a title, declares an error when it is missing and prepares a response with an `id` field. A method named `save` does not prove that an order was persisted.
 
+### A sentence to read, evidence to open
+
+In this synthetic example, ASES separates the branches of a room booking: duration
+too short, room occupied, booking prepared. The explanation retains field names
+and lets you open the supporting code. Giving every `return` an impressive name
+is fortunately optional.
+
+[![Behavior reconstructed in Italian: room-booking duration and availability conditions, results and an error, with links to source evidence.](docs/images/ases-behavior.jpg)](docs/images/ases-behavior.jpg)
+
+*Controlled room-booking demo. “Reconstructed from code — needs confirmation” stays
+visible: the text describes a static reading, not an executed test.*
+
 In **Documents**, choose **Requirements** for original declarations or **Requirements reconstructed from code** for this interpretation. RAD keeps declared requirements separate from reconstructed behavior and links them to available evidence. SDD and ODD describe the recovered system and object structure, signatures, available contracts and static diagrams; test documents distinguish definitions, proposals and imported results. These are evidence-based views, not stakeholder-approved specifications. For a new revision, scan to a separate snapshot and compare it with the previous one; `ases documents-diff previous.ases current.ases --out impact.json` reports document changes. Reviews remain separate from generated records, and changed support is flagged for review rather than silently carried forward. The [document guide](docs/DOCUMENTS.md) explains formats and limits.
 
 **Operations and questions** groups entries with the same handlers and asks for context that code cannot establish. Give an operation a readable name, declare a need and supply its author, scope and acceptance criterion. Confirming a reading does not automatically adopt a requirement; adoption does not verify satisfaction. RAD keeps these contributions separate from original specifications. The Save button does not come with a rubber stamp saying “done”.
+
+### You supply the missing context
+
+[![ASES documents: an explicitly adopted requirement with author, scope, acceptance criterion and unverified satisfaction.](docs/images/ases-documents.png)](docs/images/ases-documents.png)
+
+*Synthetic example: the adopted requirement retains its author, scope and
+acceptance criterion. It stays separate from original specifications and recovered
+behavior. Save is useful; time travel to interview the stakeholders is still
+unavailable.*
 
 ### Making sense of the numbers
 
@@ -169,7 +208,14 @@ Interpretation is static and partial, rather than universal domain understanding
 
 ## Understand existing code with the scanner
 
+<details>
+<summary>The scan pipeline, in one diagram</summary>
+
 [![Scanner pipeline: classify source roles, extract syntax, reconstruct static relations, explain findings and compare snapshots.](docs/images/ases-pipeline.png)](docs/images/ases-pipeline.svg)
+
+An illustration of the workflow, not a screenshot of an analysis.
+
+</details>
 
 The scanner separates owned source and tests from generated, vendored, tooling and documentation files. It extracts facts, builds a graph, reconstructs supported relationships and exports readable documents plus tool-neutral data. Source code, imports and build scripts are read as data; the target application is never executed.
 
@@ -210,7 +256,14 @@ and when a plain `if` can be perfectly adequate.
 
 ## Findings with their reasoning attached
 
+<details>
+<summary>What a finding contains: an illustrated example</summary>
+
 [![Illustrative ASES finding with evidence, counter-evidence, source role, confidence and scoped interpretation.](docs/images/ases-output.png)](docs/images/ases-output.svg)
+
+An illustration of the format, not a measured defect in a real project.
+
+</details>
 
 Results preserve evidence, counter-evidence, assumptions, categorical confidence and limitations. Finding states distinguish `OBSERVED`, `INFERRED`, `OPPORTUNITY`, `HINT`, `UNKNOWN`, `CONTRADICTED` and `SUPPRESSED`. Evidence states are a separate vocabulary. Public static relations and paths remain inferred, even when the supporting syntax is directly observed.
 
@@ -327,6 +380,12 @@ Site mode samples public same-origin HTML, respects `robots.txt`, and records pa
 Artifact mode reads supplied local JS bundles, source maps and selected manifest fields within explicit file/byte/node bounds. Reconciliation distinguishes exact bytes, source-map assertions, ambiguity, mismatch and unknown correspondence. Optional runtime input must already come from an external collector. ASES does not run builds, acquire runtime observations, fetch missing maps, decode arbitrary transformed-symbol equivalence or infer deployment truth. A loaded script is not an executed feature.
 
 ## Local models and HTTP observations
+
+[![More tools: local-model reading, HTTP observations, websites, snapshot comparison and artifacts.](docs/images/ases-tools.jpg)](docs/images/ases-tools.jpg)
+
+*Each card opens an explicit operation. Websites and remote repositories need
+network access; the other functions use the local inputs you select. The menu
+does not take it upon itself to start probing your project.*
 
 Normal scanning uses parsers and rules. To add a model-assisted reading,
 **More tools → Interpret with a local model** offers two providers:

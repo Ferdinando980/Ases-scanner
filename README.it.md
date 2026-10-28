@@ -16,6 +16,16 @@ per le integrazioni sono più sotto. [English](README.md) ·
 [Guida alla UI](docs/DESK.it.md) · [Documenti](docs/DOCUMENTS.it.md) ·
 [Misure e limiti](docs/ACCURACY.md).
 
+[![ASES: il quadro del progetto, le route recuperate e ciò che resta da verificare.](docs/images/ases-desk.jpg)](docs/images/ases-desk.jpg)
+
+*Una scansione, una prima lettura. Qui la piccola fixture pubblica Spring inclusa
+nei test: struttura, prossimi passi e limiti nello stesso posto. Nessun semaforo
+verde distribuito sulla fiducia.*
+
+[Avvio rapido](#provalo-dal-browser) · [Requisiti e documenti](#requisiti-frasi-non-una-collezione-di-sigle) ·
+[Pattern](#le-proposte-sui-pattern-in-pratica) · [Modelli locali](#modelli-locali-e-osservazioni-http) ·
+[Verifiche](#verifiche-e-stato-attuale)
+
 ## Perché l'ho costruito
 
 Alcuni progetti iniziano con un'idea e nessuna riga di codice. Altri arrivano con molto codice e un README avvistato per l'ultima volta tre refactoring fa. Volevo un modo utile di lavorare partendo da entrambe le situazioni.
@@ -83,9 +93,16 @@ testimoniare cosa avevano in mente gli stakeholder.
 
 Il progetto analizzato resta intatto. I report della UI sono temporanei: scaricali per conservarli. Un errore o un annullamento mantiene l’ultima analisi completata. Ctrl+C nel terminale chiude la sessione e rimuove i suoi file temporanei; chiudere soltanto la scheda non ferma il processo. La [guida all’interfaccia](docs/DESK.it.md) spiega ambiente, risultati, limiti e recupero dagli errori.
 
-[![La UI ASES con riepilogo, prossimi passi e limiti espliciti.](docs/images/ases-desk.jpg)](docs/images/ases-desk.jpg)
+### Dal risultato alla riga di codice
 
-Schermata reale sulla fixture pubblica `runtime/tests/fixture_spring`, usata per dimostrare il funzionamento. [Vedi anche il collegamento fra route, codice e prove](docs/images/ases-desk-evidence.jpg).
+Scegli una route, apri la prova e segui **Cosa raggiunge** o **Chi lo chiama**.
+Puoi controllare la ricostruzione sul sorgente, senza dover interpretare un grafo
+grezzo per scoprire dove comincia la richiesta.
+
+[![Mappa del codice: la route POST /users, la prova nel controller Java e i collegamenti statici navigabili.](docs/images/ases-desk-evidence.jpg)](docs/images/ases-desk-evidence.jpg)
+
+*La route appartiene alla fixture pubblica `runtime/tests/fixture_spring`.
+Le frecce descrivono collegamenti statici: non sono richieste HTTP eseguite.*
 
 ## Due parti, tre punti di partenza
 
@@ -135,9 +152,30 @@ descrive una funzione. La parola *tempo*, da sola, non decide la categoria.
 
 Nel **reverse engineering**, parte invece dai flussi supportati del codice: richiesta o chiamata pubblica, condizioni, risultati, errori e chiamate con possibili effetti. Da questi costruisce frasi di comportamento e le collega alle prove. Per esempio, può ricostruire che un handler controlla un titolo, dichiara un errore quando manca e prepara una risposta con il campo `id`. Non conclude che un ordine sia stato davvero salvato soltanto perché un metodo si chiama `save`.
 
+### Una frase da leggere, una prova da aprire
+
+In questo esempio sintetico, ASES separa i rami di una prenotazione: durata troppo
+breve, sala occupata, prenotazione preparata. La spiegazione conserva i nomi dei
+campi e permette di aprire il codice che la sostiene. Non serve dare un nome
+altisonante a ogni `return` per renderlo comprensibile.
+
+[![Comportamento ricostruito in italiano: condizioni sulla durata e sulla disponibilità di una sala, risultati ed errore, con prove apribili nel codice.](docs/images/ases-behavior.jpg)](docs/images/ases-behavior.jpg)
+
+*Demo controllata di prenotazione sale. «Ricostruito dal codice — da confermare»
+rimane visibile: la frase descrive una lettura statica, non una prova eseguita.*
+
 In **Documenti** puoi scegliere **Requisiti** per le dichiarazioni originali oppure **Requisiti ricostruiti dal codice** per questa interpretazione. Il RAD conserva entrambe le prospettive. L’ODD aggiunge firme, contratti disponibili e diagrammi; i documenti dei test distinguono definizioni, proposte e risultati importati. Le revisioni restano separate dalle fonti, vengono conservate nel browser per il progetto e incluse nel pacchetto completo; se una nuova scansione cambia il record, il conflitto resta visibile da rivedere.
 
 Le **Operazioni e domande** raggruppano ingressi con gli stessi handler e ti chiedono ciò che il codice non può sapere. Puoi dare un nome comprensibile al flusso, dichiarare il bisogno e indicare autore, ambito e criterio di accettazione. Confermare una lettura non adotta automaticamente un requisito; adottarlo non significa averlo verificato. Il RAD tiene separati questi contributi dalle specifiche originali. Il timbro «fatto» non è incluso nel pulsante Salva.
+
+### Il pezzo di contesto lo aggiungi tu
+
+[![Documenti ASES: un requisito adottato esplicitamente, con autore, ambito, criterio di accettazione e soddisfacimento non verificato.](docs/images/ases-documents.png)](docs/images/ases-documents.png)
+
+*Esempio sintetico: il requisito adottato conserva autore, ambito e criterio di
+accettazione. Rimane distinto dalla specifica originale e dai comportamenti
+ricostruiti. Il pulsante Salva è utile; il viaggio nel tempo per intervistare gli
+stakeholder non è ancora disponibile.*
 
 ### Come leggere i numeri senza litigarci
 
@@ -170,7 +208,14 @@ L’interpretazione è statica e parziale, non una lettura universale del domini
 
 ## Comprendere codice esistente con lo scanner
 
+<details>
+<summary>Il percorso della scansione, in un diagramma</summary>
+
 [![Pipeline dello scanner: classificare le fonti, estrarre sintassi, ricostruire relazioni statiche, spiegare i finding e confrontare snapshot.](docs/images/ases-pipeline.png)](docs/images/ases-pipeline.svg)
+
+Schema illustrativo del funzionamento; non è una schermata di un'analisi.
+
+</details>
 
 Lo scanner separa sorgenti del progetto e test da file generati, librerie distribuite, tooling e documentazione. Estrae fatti, costruisce un grafo, ricostruisce le relazioni supportate ed esporta documenti leggibili e dati generici. Codice, import e script di build vengono letti come dati; l'applicazione analizzata non viene eseguita.
 
@@ -210,7 +255,14 @@ spiega criteri, controprove e quando un semplice `if` può andare benissimo.
 
 ## Finding con le prove allegate
 
+<details>
+<summary>Come è composto un finding: esempio illustrativo</summary>
+
 [![Esempio illustrativo di finding ASES con prove, controprove, ruolo della fonte, confidence e interpretazione circoscritta.](docs/images/ases-output.png)](docs/images/ases-output.svg)
+
+Illustrazione del formato: non è un difetto misurato su un progetto reale.
+
+</details>
 
 I risultati conservano prove, controprove, assunzioni, confidence categorica e limiti. Gli stati dei finding distinguono `OBSERVED`, `INFERRED`, `OPPORTUNITY`, `HINT`, `UNKNOWN`, `CONTRADICTED` e `SUPPRESSED`. Gli stati delle evidenze costituiscono un vocabolario separato. Relazioni statiche e percorsi pubblici restano inferiti, anche quando la sintassi di supporto è osservata direttamente.
 
@@ -327,6 +379,12 @@ La modalità sito campiona HTML pubblico dalla stessa origine, rispetta `robots.
 La modalità artefatti legge bundle JS locali, source map e campi selezionati dei manifest entro limiti espliciti di file, byte e nodi. La correlazione distingue byte identici, asserzioni delle source map, ambiguità, discordanza e corrispondenza sconosciuta. L'eventuale input runtime deve essere già stato prodotto da un collector esterno. ASES non avvia build, non acquisisce runtime, non recupera map mancanti e non stabilisce equivalenza arbitraria fra simboli trasformati o verità di deployment. Uno script caricato non è una funzionalità eseguita.
 
 ## Modelli locali e osservazioni HTTP
+
+[![Altri strumenti: lettura con modello locale, osservazioni HTTP, siti, confronto fra analisi e artefatti.](docs/images/ases-tools.jpg)](docs/images/ases-tools.jpg)
+
+*Ogni scheda apre un'operazione esplicita. Siti e repository remoti usano la rete;
+le altre funzioni lavorano sugli input locali indicati. Il menu non decide da solo
+di mettersi a fare richieste al tuo progetto.*
 
 La scansione normale usa parser e regole. Se vuoi aggiungere una lettura con un
 modello, **Altri strumenti → Interpreta con un modello locale** offre due provider:
