@@ -315,3 +315,9 @@ recognized modal predicates, with bounded adverbs and capability forms. A noun
 such as review/request in the subject or object does not activate the new rule.
 Declared categories and quality constraints keep precedence; passive and arbitrary
 prose remain partial. The original sentence and exact matched verb are retained.
+
+`constraint-signals/5` adds explicit protection/access, interaction, platform and
+cadence constraints in English and Italian. Reporting a quality topic remains
+distinct from imposing it: displaying a survey rate is not an acceptance target.
+An actual bound on the reporting action remains independently detectable. Known
+regression classification is not independent validation or proof of satisfaction.

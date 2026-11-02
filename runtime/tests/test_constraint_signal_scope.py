@@ -36,7 +36,7 @@ def test_constraint_signals_keep_exact_source_reasons(statement, category):
     assert result['kind'] == 'nonfunctional'
     assert category in result['categories']
     assert all(reason in statement for reason in result['evidence'])
-    assert result['profile'] == 'constraint-signals/4'
+    assert result['profile'] == 'constraint-signals/5'
 
 
 @pytest.mark.parametrize('statement', [

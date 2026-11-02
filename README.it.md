@@ -11,7 +11,7 @@ codice e documentazione, prepara una spiegazione navigabile e collega ciò che d
 alle fonti. La scansione normale funziona sul tuo computer, senza modelli o chiavi
 API. Il codice viene letto, mai avviato. Già abbastanza software si avvia da solo.
 
-**Runtime attuale: 1.14.0, sperimentale.** Parti dalla UI; i comandi e i contratti
+**Runtime attuale: 1.15.0, sperimentale.** Parti dalla UI; i comandi e i contratti
 per le integrazioni sono più sotto. [English](README.md) ·
 [Guida alla UI](docs/DESK.it.md) · [Documenti](docs/DOCUMENTS.it.md) ·
 [Misure e limiti](docs/ACCURACY.md).
@@ -58,6 +58,12 @@ requisiti e corregge un falso suggerimento Observer: svegliare thread con
 PROMISE passa a 554/625 classificazioni corrette, ReqView resta 110/110. Restano
 48 errori e 23 astensioni PROMISE; è una regressione misurata del classificatore,
 non una nuova prova indipendente o una nuova misura dell'estrazione completa.
+
+La 1.15.0 riconosce altri vincoli espliciti su sicurezza, interazione e piattaforma,
+distinguendoli dalle schermate che ne mostrano soltanto i dati. Sullo stesso
+campione PROMISE arriva a **565/625 (90,40%)**, senza peggioramenti rispetto alla
+1.14.0; ReqView resta 110/110. Restano 37 errori e 23 astensioni: il 90% non è
+un lasciapassare per smettere di leggere le prove.
 
 ## Provalo dal browser
 
@@ -421,7 +427,7 @@ ASES offre procedure generiche di sviluppo ed evidenze strutturali. Altri strume
 
 ## Verifiche e stato attuale
 
-La **1.14.0 è sperimentale** e richiede Python 3.11 o successivo. La
+La **1.15.0 è sperimentale** e richiede Python 3.11 o successivo. La
 [CI pubblica](https://github.com/Ferdinando980/ases-scanner/actions/workflows/tests.yml)
 verifica Windows, Ubuntu e macOS con Python 3.11 e 3.14. Le prove del pacchetto
 installato e i dettagli degli ambienti sono nella [matrice](docs/SUPPORT.md).

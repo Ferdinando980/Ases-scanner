@@ -11,7 +11,7 @@ reads source and documentation, prepares a navigable explanation and links its
 claims to their sources. Normal scanning runs on your computer without a model or
 an API key. Source is read, never started. Enough software starts itself already.
 
-**Current runtime: 1.14.0, experimental.** Start with the desk; terminal commands
+**Current runtime: 1.15.0, experimental.** Start with the desk; terminal commands
 and integration contracts are further down. [Italiano](README.it.md) ·
 [Desk guide](docs/DESK.md) · [Documents](docs/DOCUMENTS.md) ·
 [Measurements and limits](docs/ACCURACY.md).
@@ -58,6 +58,12 @@ classification and fixes a false Observer suggestion: waking threads with
 sentences, PROMISE rises to 554/625 correct classifications and ReqView stays
 110/110. PROMISE retains 48 errors and 23 abstentions. This is a measured
 classifier regression, not new independent validation or a fresh extraction test.
+
+Version 1.15.0 recognizes more explicit security, interaction and platform
+constraints, keeping them distinct from screens that merely display related data.
+On the same PROMISE sample it reaches **565/625 (90.40%)**, with no regressions
+against 1.14.0; ReqView stays at 110/110. There are still 37 errors and 23
+abstentions. Ninety percent is not a permission slip to stop checking the evidence.
 
 ## Try it in your browser
 
@@ -422,7 +428,7 @@ ASES supplies generic engineering procedures and structural evidence. Other tool
 
 ## Validation and current state
 
-**Version 1.14.0 is experimental** and requires Python 3.11 or newer. The
+**Version 1.15.0 is experimental** and requires Python 3.11 or newer. The
 [public CI](https://github.com/Ferdinando980/ases-scanner/actions/workflows/tests.yml)
 checks Windows, Ubuntu and macOS with Python 3.11 and 3.14. Installed-package
 checks and exact environments are recorded in the [support matrix](docs/SUPPORT.md).

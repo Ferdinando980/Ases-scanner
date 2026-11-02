@@ -2,7 +2,27 @@
 
 Il benchmark confronta ciò che ASES ricostruisce con aspettative esplicite verificabili nei sorgenti. Un modello può superare lo schema e contenere comunque un falso allarme: i due controlli servono a scopi diversi.
 
-## Classificazione 1.14.0 — 2 novembre 2026
+## Classificazione 1.15.0 — 2 novembre 2026
+
+Il confronto diretto sulle stesse frasi note passa da 554 a **565/625 PROMISE
+(90,40%)**, con 11 miglioramenti e nessun peggioramento rispetto alla 1.14.0.
+ReqView resta **110/110**. Restano 37 classificazioni errate e 23 astensioni
+PROMISE. Etichette, frasi e denominatori sono conservati; non è un holdout.
+
+Il profilo `constraint-signals/5` aggiunge vincoli espliciti su protezione,
+permessi, modalità di interazione, indipendenza dalla piattaforma e cadenze di
+aggiornamento. Le prove in italiano e inglese distinguono un vincolo imposto dal
+mostrare o esportare informazioni su quel tema. L'obiettivo di successo espresso
+da un sondaggio resta distinto dalla funzione di un cruscotto che ne visualizza
+il risultato. Le citazioni restano porzioni esatte del testo originale.
+
+PROMISE funzionali: TP236/FP28/FN19, precisione 89,39%, richiamo 92,55%.
+Non funzionali: TP329/FP9/FN41, precisione 97,34%, richiamo 88,92%.
+L'accuratezza complessiva non sostituisce precisione/richiamo per categoria:
+la beta generale resta NO GO. Questa prova non riesegue il recupero integrale
+dei documenti o dei flussi del codice; valuta solo la classificazione.
+
+## Checkpoint storico 1.14.0 — 2 novembre 2026
 
 Il confronto diretto del classificatore sulle stesse 735 frasi originali conserva
 etichette e denominatori. PROMISE passa da 537 a **554/625 (88,64%)**: 17 casi

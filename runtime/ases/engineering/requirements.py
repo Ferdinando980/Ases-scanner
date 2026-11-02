@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 
-CLASSIFICATION_PROFILE = 'constraint-signals/4'
+CLASSIFICATION_PROFILE = 'constraint-signals/5'
 
 MODAL = re.compile(
     r"\b(?P<modal>shall|must|should|will|can|deve|devono|dovr[àa]|dovranno|dovrebbe|dovrebbero|"
@@ -146,6 +146,37 @@ QUALITY['appearance'] += (
     r'|\b(?:page|website|interface)\b.{0,45}\b(?:modern|clean|concise|appealing|similar format)\b'
     r'|\b(?:religious|ethnic|cultural)\b.{0,45}\b(?:offensive|alienate|appropriate)\b'
     r'|\b(?:offensive|alienate)\b.{0,45}\b(?:religious|ethnic|cultural)\b')
+# Explicit obligations, not isolated subject-matter words. Keep display/export
+# features distinct from the quality imposed on the system or its use.
+QUALITY['security'] += (
+    r'|\bprotect\w*\b.{0,45}\b(?:from|against)\b.{0,35}\b(?:abuse|attacks?|intrusion)\b'
+    r'|\baccessible\s+only\s+to\s+authori[sz]ed\b'
+    r'|\baccess\b.{0,30}\b(?:limited|restricted)\b.{0,55}\b(?:permissions?|roles?|privileges?)\b'
+    r'|\b(?:require|provide|have)\s+(?:both\s+)?authentication\s*(?:,?\s*and\s+|&\s*)authorization\b'
+    r'|\b(?:use|require)\s+(?:a\s+)?username\s+and\s+(?:a\s+)?password\b.{0,65}\bauthenticat\w*\b'
+    r'|\b(?:users?|operators?)\s+(?:must|shall|will)\s+provide\s+(?:a\s+)?username\s+and\s+(?:a\s+)?password\b'
+    r'|\bauthentication\s+and\s+authorization\s+are\s+required\b'
+    r'|\b(?:protegger\w*|protegge)\b.{0,45}\b(?:da|dai|dagli|contro)\b.{0,35}\b(?:abusi|attacchi|intrusioni)\b'
+    r'|\baccessibili\s+solo\s+al\s+personale\s+autorizzato\b'
+    r'|\baccesso\b.{0,60}\b(?:limitato|ristretto)\b.{0,45}\b(?:permessi|ruoli|privilegi)\b'
+    r'|\b(?:utenti|operatori)\s+devono\s+inserire\s+un\s+nome\s+utente\s+e\s+una\s+password\b'
+    r'|\bautenticazione\s+e\s+autorizzazione\s+sono\s+richieste\b')
+QUALITY['usability'] += (
+    r'|\b(?:\d+(?:[.,]\d+)?%\s+of\s+)?(?:novice|untrained)\s+users\b.{0,60}\b(?:use|operate|complete)\b'
+    r'|\b(?:\d+(?:[.,]\d+)?%\s+of\s+)(?:customers?|users?|participants?)\b.{0,50}\bcomfortable\b'
+    r'|\b(?:activated|selected|operated|accessible)\b.{0,70}\b(?:mouse|keyboard)\b'
+    r'|\bcomplete\b.{0,40}\busing\s+a\s+mouse\s+or\s+keyboard\b'
+    r'|\b(?:attivat\w*|selezionat\w*|utilizzabil\w*)\b.{0,60}\b(?:mouse|tastiera)\b'
+    r'|\bcompletare\b.{0,40}\busando\s+il\s+mouse\s+o\s+la\s+tastiera\b'
+    r'|\b\d+(?:[.,]\d+)?%\s+degli\s+utenti\s+principianti\b.{0,50}\busare\b'
+    r'|\bhelp\s+section\s+(?:shall|must)\s+explain\b.{0,100}\bdifficulty\s+using\b'
+    r'|\bsezione\s+di\s+aiuto\s+deve\s+spiegare\b.{0,100}\bdifficolt[àa]\b')
+QUALITY['portability'] += r'|\bplatform\s+independent\b|\bindipendente\s+dalla\s+piattaforma\b'
+QUALITY['performance'] += (
+    r'|\b(?:updates?|upgrades?)\b.{0,45}\b(?:take|within)\s+(?:a|one|\d+)\s+(?:day|days|week|weeks|hours?)\b'
+    r'|\b(?:queries|refresh|polling)\b.{0,90}\bonce\s+(?:a|per)\s+(?:day|week|hour|minute)\b'
+    r'|\baggiornamento\b.{0,45}\brichiedere\s+(?:un|\d+)\s+(?:giorno|giorni|ore)\b'
+    r'|\binterrogazioni\b.{0,60}\buna\s+volta\s+alla\s+settimana\b')
 QUALITY = {key: re.compile(value, re.I) for key, value in QUALITY.items()}
 
 # Declarative descriptions qualify only for bounded observable output/rate forms.
@@ -164,7 +195,11 @@ METRIC_ACTION = re.compile(
 QUALITY_TOPICS = frozenset({'response time', 'latency', 'throughput', 'availability', 'uptime', 'downtime',
                           'satisfaction', 'productivity', 'mistakes', 'font', 'colour', 'nomenclature',
                           'hardware', 'browser', 'operating system', 'database management system',
-                          'database management systems', 'load balancing', 'robustness'})
+                          'database management systems', 'load balancing', 'robustness',
+                          'password policy', 'platform independent', 'indipendente dalla piattaforma'})
+REPORTING_SUBJECT = re.compile(
+    r'\b(?:system|application|dashboard|report|interface|page|tool|product|'
+    r'cruscotto|rapporto|sistema|applicazione|pagina)\b', re.I)
 
 
 def quality_signals(text):
@@ -174,6 +209,14 @@ def quality_signals(text):
             # 200 ms) is still retained by its own match; do not erase the clause.
             if match.group().casefold() in QUALITY_TOPICS and METRIC_ACTION.search(text[:match.start()]):
                 continue
+            if ((match.group().lower().startswith(('novice users', 'untrained users', 'protect'))
+                 or re.match(r'\d+(?:[.,]\d+)?%\s+(?:of|degli)\b', match.group()))
+                    and (reporting := METRIC_ACTION.search(text[:match.start()]))):
+                # A survey's expected success rate is a quality target, whereas
+                # a dashboard displaying that rate is a reporting feature.
+                subject = re.split(r'[.;\n]', text[:reporting.start()])[-1]
+                if REPORTING_SUBJECT.search(subject):
+                    continue
             yield category, match.group()
             break
 
