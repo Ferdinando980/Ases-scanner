@@ -13,6 +13,10 @@ notification synchronization and declaration-only notification signatures.
 The installed-target smoke verified all 95 distributed runtime files against
 source and wheel, plus synthetic scanning and IT/EN document regeneration.
 It reused existing environment dependencies; it was not a fresh dependency matrix.
+The public six-job Windows/Ubuntu/macOS matrix for commit `ad7dac4` passed 815 tests
+per job, zero skipped/failed. It runs source suites before building/reinstalling
+the wheel and checking isolated resources. Python 3.11.16 locally passed 814 tests
+with one skip using the installed package and checkout fixtures (77.22 s).
 Earlier platform checks below belong to their recorded versions.
 
 ## Historical experimental 1.13.1 checkpoint — 27 October 2026

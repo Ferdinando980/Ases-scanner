@@ -11,9 +11,14 @@ Windows/Python 3.14.7: 814 passed, 1 skipped (symlink permissions), zero failure
 scan and English/Italian document regeneration passed. Wheel SHA-256:
 `080d19f9fb18d5302815a75e343c9a75be2d56cf7a7aa4c45e2aee750ad3e95c`.
 The first restricted-environment run retained eight permission failures; the full
-normal-Windows rerun passed. Prior Linux/macOS results below remain historical
-until the new revision completes its public CI matrix. No independent or general
-accuracy acceptance is implied by platform success.
+normal-Windows rerun passed. Python 3.11.16 also passed 814 tests with one skip
+using the installed package and checkout fixtures (77.22 s).
+The [public matrix for ad7dac4](https://github.com/Ferdinando980/ases-scanner/actions/runs/41488179558)
+passed **815 tests per environment, zero skipped or failed** on all six jobs:
+Windows, Ubuntu and macOS with Python 3.11 and 3.14. Its suite uses editable source;
+each job then builds/reinstalls the wheel and checks isolated package resources.
+It does not repeat the full suite after wheel installation. No independent or
+general accuracy acceptance is implied by platform success.
 
 ## Historical experimental 1.13.1 checkpoint — 27 October 2026
 
