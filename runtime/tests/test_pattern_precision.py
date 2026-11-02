@@ -41,6 +41,46 @@ example="mailListener.update();auditListener.update();billingListener.update()"
     assert not _observer_findings('app.py',_notification_text('app.py','example=f"mailListener.update();auditListener.update();billingListener.update()"'))
 
 
+def test_synchronization_methods_and_notification_definitions_are_not_consumers():
+    python_sync='''def worker(condition):
+    condition.notify_all()
+    condition.notifyAll()
+'''
+    java_sync='''class Worker {
+  void run(Object monitor) {
+    monitor.notifyAll();
+    monitor.notify_all();
+  }
+}'''
+    assert not _observer_findings('worker.py',python_sync)
+    assert not _observer_findings('Worker.java',java_sync)
+
+    definitions='''def notifyEmail(message): pass
+def publish_event(event): pass
+def send_audit(record): pass
+'''
+    java_definitions='class Events { void notifyEmail() {} void publishEvent() {} void sendAudit() {} }'
+    javascript_definitions='const events = { notifyEmail() {}, publishEvent() {}, sendAudit() {} };'
+    assert not _observer_findings('events.py',definitions)
+    assert not _observer_findings('Events.java',java_definitions)
+    assert not _observer_findings('events.js',javascript_definitions)
+
+
+def test_direct_unqualified_fanout_and_qualified_subscriber_calls_remain_evidence():
+    endpoints='''def dispatch(message):
+    notifyEmail(message)
+    publish_event(message)
+    send_audit(message)
+'''
+    subscribers='''def dispatch(event):
+    mailSubscriber.notify(event)
+    auditSubscriber.notify(event)
+    billingSubscriber.notify(event)
+'''
+    assert _observer_findings('events.py',endpoints)
+    assert _observer_findings('events.py',subscribers)
+
+
 def test_factory_does_not_mix_native_arrays_or_unrelated_callables():
     native='function make(kind){if(kind===1)return new Float32Array(2);if(kind===2)return new Uint8Array(2);return new Uint32Array(2);}'
     assert not _factory_findings('arrays.js',native,'arrays')
@@ -48,6 +88,13 @@ def test_factory_does_not_mix_native_arrays_or_unrelated_callables():
     assert not _factory_findings('app.js',unrelated,'app')
     same_role='function make(kind){if(kind===1)return new AlphaService();if(kind===2)return new BetaService();}'
     assert _factory_findings('app.js',same_role,'app')
+
+
+def test_notification_signatures_do_not_establish_consumers():
+    typescript = 'interface Events { notifyEmail(message: string): void; publishEvent(e: Event): void; sendAudit(r: Record): void; }'
+    java = 'interface Events { String[] notifyEmail(); Object[] publishEvent(); byte[] sendAudit(); }'
+    assert not _observer_findings('events.ts', typescript)
+    assert not _observer_findings('Events.java', java)
 
 
 def test_auxiliary_opportunities_are_kept_as_hints_and_ids_are_unique(tmp_path):
@@ -63,7 +110,7 @@ def test_auxiliary_opportunities_are_kept_as_hints_and_ids_are_unique(tmp_path):
     aux=[r for r in rows if any(e.startswith('benchmarks/') for e in r['evidence'])]
     assert aux and all(r['status']=='HINT' for r in aux)
     assert all(r['counter_evidence'] for r in aux)
-    assert result['inventory']['parser_profile']['patterns']=='pattern-opportunities/4'
+    assert result['inventory']['parser_profile']['patterns']=='pattern-opportunities/5'
 
 
 def test_highlights_group_repeated_families_without_discarding_feed_rows():

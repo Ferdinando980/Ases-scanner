@@ -5,7 +5,14 @@ pattern di progettazione e l'idioma Factory. Non copre l'intero catalogo GoF.
 Il catalogo disponibile è consultabile anche nel quadro della UI. Il modello
 linguistico opzionale non produce queste proposte: derivano da analisi statica.
 
-`pattern-opportunities/4` conserva questi criteri di precisione:
+`pattern-opportunities/5` conserva questi criteri di precisione:
+
+- Observer: le chiamate di sincronizzazione `notify_all`/`notifyAll` e le
+  dichiarazioni di metodi non contano come destinatari. Gli endpoint diretti
+  devono essere chiamate non qualificate; una chiamata su un oggetto rimane
+  valutata come destinatario, senza contare una seconda volta il nome del metodo.
+  Questo riduce falsi suggerimenti sui lock: svegliare thread non equivale a
+  scoprire tre iscritti a una newsletter.
 
 - Strategy, State e Command: conta i rami diretti dei costrutti sintattici Java,
   JavaScript/TypeScript e Python. Commenti, stringhe e switch annidati non si sommano

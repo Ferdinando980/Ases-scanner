@@ -1,10 +1,21 @@
 # Verified environments and experimental scope
 
-ASES runtime 1.13.1 declares Python 3.11 and later in `runtime/pyproject.toml`.
+ASES runtime 1.14.0 declares Python 3.11 and later in `runtime/pyproject.toml`.
 That declaration is broader than the environments verified below. Independent
 label review and a user-utility study have not been completed.
 
-## Current experimental 1.13.1 checkpoint — 27 October 2026
+## Current experimental 1.14.0 checkpoint — 2 November 2026
+
+Windows/Python 3.14.7: 814 passed, 1 skipped (symlink permissions), zero failures,
+87.50 s. All 95 distributed files match source and the installed target; synthetic
+scan and English/Italian document regeneration passed. Wheel SHA-256:
+`080d19f9fb18d5302815a75e343c9a75be2d56cf7a7aa4c45e2aee750ad3e95c`.
+The first restricted-environment run retained eight permission failures; the full
+normal-Windows rerun passed. Prior Linux/macOS results below remain historical
+until the new revision completes its public CI matrix. No independent or general
+accuracy acceptance is implied by platform success.
+
+## Historical experimental 1.13.1 checkpoint — 27 October 2026
 
 Wheel SHA-256:
 `f65f62235b649748b36e63136e92d9a9429509a3db7aa72087db28b022812de1`.

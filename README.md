@@ -11,7 +11,7 @@ reads source and documentation, prepares a navigable explanation and links its
 claims to their sources. Normal scanning runs on your computer without a model or
 an API key. Source is read, never started. Enough software starts itself already.
 
-**Current runtime: 1.13.1, experimental.** Start with the desk; terminal commands
+**Current runtime: 1.14.0, experimental.** Start with the desk; terminal commands
 and integration contracts are further down. [Italiano](README.it.md) ·
 [Desk guide](docs/DESK.md) · [Documents](docs/DOCUMENTS.md) ·
 [Measurements and limits](docs/ACCURACY.md).
@@ -46,11 +46,18 @@ They belong together: understand what exists, decide what should change, impleme
 | Add a local reading assistant | Optional LLM or GLiNER2 providers producing cited hypotheses for review |
 | Start or continue development | A method, instructions for coding assistants and templates for requirements, design, tests and traceability |
 
-Version 1.13.1 extends ReqView, ARFF and HTML reading, constraint recognition and
+Version 1.13.1 extended ReqView, ARFF and HTML reading, constraint recognition and
 analysis of internal functions or declarations inside conditions. It keeps
 uncertainty visible and distinguishes an inspected body with no admitted facts
 from a body that was not analyzed. Inventing requirements would improve the
 numbers, but would rather defeat the point.
+
+Version 1.14.0 adds explicit English and Italian actions to requirement
+classification and fixes a false Observer suggestion: waking threads with
+`notify_all` does not create three newsletter subscribers. On the same known
+sentences, PROMISE rises to 554/625 correct classifications and ReqView stays
+110/110. PROMISE retains 48 errors and 23 abstentions. This is a measured
+classifier regression, not new independent validation or a fresh extraction test.
 
 ## Try it in your browser
 
@@ -415,12 +422,12 @@ ASES supplies generic engineering procedures and structural evidence. Other tool
 
 ## Validation and current state
 
-**Version 1.13.1 is experimental** and requires Python 3.11 or newer. The
+**Version 1.14.0 is experimental** and requires Python 3.11 or newer. The
 [public CI](https://github.com/Ferdinando980/ases-scanner/actions/workflows/tests.yml)
 checks Windows, Ubuntu and macOS with Python 3.11 and 3.14. Installed-package
 checks and exact environments are recorded in the [support matrix](docs/SUPPORT.md).
 
-The current measurements are from 27 October 2026. They are regressions on known
+The complete 1.13.1 measurements below are from 27 October 2026. They are regressions on known
 cases with preserved sources and labels, rather than an independent evaluation on
 unseen projects:
 

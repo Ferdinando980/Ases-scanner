@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 
-CLASSIFICATION_PROFILE = 'constraint-signals/3'
+CLASSIFICATION_PROFILE = 'constraint-signals/4'
 
 MODAL = re.compile(
     r"\b(?P<modal>shall|must|should|will|can|deve|devono|dovr[àa]|dovranno|dovrebbe|dovrebbero|"
@@ -22,6 +22,24 @@ FUNCTION = re.compile(
     r"registr\w*|autentic\w*|verific\w*|valid\w*|gener\w*|esport\w*|import\w*|annull\w*|prenot\w*|gest\w*|"
     r"offer\w*|paus\w*|resum\w*|locat\w*|merg\w*|reset\w*|hold\w*|consist\w*|represent\w*|retain\w*|"
     r"track\w*|acquir\w*|identif\w*|accept\w*|reject\w*|enforc\w*|replicat\w*|disconnect\w*)\b", re.I)
+
+# These ordinary verbs are useful only as modal predicates. Several are also
+# common nouns (e.g. review, request, change), so do not add them to FUNCTION's
+# global search over the entire sentence.
+MODAL_ACTION = re.compile(
+    r"^\s*(?:(?:not|also|then)\s+)*(?:(?:be\s+(?:able|required|expected)\s+to)\s+)?"
+    r"(?:(?:\w+ly)\s+){0,3}(?P<action>"
+    r"review(?:s|ed|ing)?|request(?:s|ed|ing)?|enter(?:s|ed|ing)?|log(?:s|ged|ging)?|"
+    r"suppl(?:y|ies|ied|ying)|insert(?:s|ed|ing)?|compil(?:e|es|ed|ing)|scor(?:e|es|ed|ing)|"
+    r"maintain(?:s|ed|ing)?|defin(?:e|es|ed|ing)|mark(?:s|ed|ing)?|indicat(?:e|es|ed|ing)|"
+    r"chang(?:e|es|ed|ing)|end(?:s|ed|ing)?|"
+    r"revision(?:a|are|i|ano)|richied(?:e|ono|ere|erà|eranno)|inser(?:isce|iscono|ire|irà|iranno)|"
+    r"registr(?:a|ano|are|erà|eranno)|forn(?:isce|iscono|ire|irà|iranno)|compil(?:a|ano|are|erà|eranno)|"
+    r"valut(?:a|ano|are|erà|eranno)|puntegg(?:ia|iano|iare|erà|eranno)|"
+    r"mantien(?:e|ono)|manten(?:ere|uto|uta)|manterr(?:à|anno)|defin(?:isce|iscono|ire|irà|iranno)|"
+    r"segnal(?:a|ano|are|erà|eranno)|indic(?:a|ano|are|erà|eranno)|"
+    r"cambi(?:a|ano|are|erà|eranno)|contrassegn(?:a|ano|are|erà|eranno)|"
+    r"termin(?:a|ano|are|erà|eranno))\b", re.I)
 
 # These signals describe quality constraints; they are reasons, not calibrated probabilities.
 QUALITY = {
@@ -200,12 +218,19 @@ def classify_statement(text, section=''):
     if re.search(r'\b(?:functional requirements?|requisiti funzionali)\b', section, re.I):
         return {'kind': 'functional', 'origin': 'declared-section', 'categories': [], 'evidence': [section], 'profile': CLASSIFICATION_PROFILE}
     signals = list(quality_signals(text))
-    action = FUNCTION.search(text)
+    action = None
+    modal = MODAL.search(text[:600])
+    if modal:
+        action = MODAL_ACTION.search(text[modal.end():])
+    if action is None:
+        action = FUNCTION.search(text)
+    action_text = (action.group('action') if action and action.re is MODAL_ACTION else
+                   action.group() if action else None)
     if signals:
         return {'kind': 'nonfunctional', 'origin': 'text-heuristic', 'categories': [k for k, _ in signals],
                 'evidence': [value for _, value in signals], 'profile': CLASSIFICATION_PROFILE,
-                'functional_evidence': [action.group()] if action else [],
+                'functional_evidence': [action_text] if action_text else [],
                 'scope': 'quality/constraint signals; source intent and satisfaction not verified'}
     return {'kind': 'functional' if action else 'unspecified',
             'origin': 'text-heuristic' if action else 'unspecified', 'categories': [],
-            'evidence': [action.group()] if action else [], 'profile': CLASSIFICATION_PROFILE}
+            'evidence': [action_text] if action_text else [], 'profile': CLASSIFICATION_PROFILE}

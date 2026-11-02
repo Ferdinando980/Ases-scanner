@@ -2,7 +2,20 @@
 
 These checks verify the scanner, its public outputs and the engineering-kit companion. To scan your own project, start with the [README](README.md); test dependencies are optional for normal scanner use.
 
-## Current experimental 1.13.1 checkpoint — 27 October 2026
+## Current experimental 1.14.0 checkpoint — 2 November 2026
+
+Windows/Python 3.14.7: **814 passed, 1 skipped**, zero failures, 87.50 s.
+The initial restricted run retained 8 permission-related failures and one thread
+warning; the full normal-Windows rerun passed without changing those tests.
+New checks cover modal predicate actions, action nouns, quality precedence,
+notification synchronization and declaration-only notification signatures.
+
+The installed-target smoke verified all 95 distributed runtime files against
+source and wheel, plus synthetic scanning and IT/EN document regeneration.
+It reused existing environment dependencies; it was not a fresh dependency matrix.
+Earlier platform checks below belong to their recorded versions.
+
+## Historical experimental 1.13.1 checkpoint — 27 October 2026
 
 Windows/Python 3.14.7: **775 passed, 1 skipped, 0 failures/errors**, 776 tests in
 98.68 s. Ubuntu/macOS with Python 3.11/3.14: **776 passed and zero skipped/errors

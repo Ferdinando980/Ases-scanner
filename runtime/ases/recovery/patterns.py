@@ -15,7 +15,7 @@ from ..scanners.javascript import EXTENSIONS as JS_EXTENSIONS, syntax_text
 
 CODE_EXTS={'.java','.kt','.py','.cs','.cpp','.cc','.cxx'} | JS_EXTENSIONS
 TEST_MARKERS=('/test/','/tests/','src/test/','__tests__','.test.','.spec.')
-PROFILE='pattern-opportunities/4'
+PROFILE='pattern-opportunities/5'
 AUXILIARY_PARTS=frozenset({'work','bench','benchmark','benchmarks','examples','samples','experiments','research'})
 
 # Human-readable rule metadata is emitted with each finding through rule_id/signals.
@@ -479,7 +479,16 @@ def _observer_findings(rel,text,proven_emissions=()):
         site = (receiver, f'{rel}:{_line(text,match.start())}')
         if site not in proven_emissions or occurrences[site] != 1 or not re.match(re.escape(receiver) + r'\.emit\s*\(', match.group(0)):
             notify_receivers.add(receiver)
-    direct_notify=set(m.group(1) for m in re.finditer(r'(?i)\b((?:notify|publish|emit|send)[A-Z_]\w*)\s*\(',text))
+    # Count unqualified endpoint calls only. In particular, Python/Java
+    # synchronization methods and method declarations are not fanout edges.
+    direct_notify=set()
+    endpoint_call=re.compile(r'(?<![\w.$])((?:notify|publish|emit|send)(?:[A-Z]\w*|_[a-z]\w*))\s*\(')
+    for match in endpoint_call.finditer(text):
+        if match.group(1).lower() in {'notifyall','notify_all'}:
+            continue  # Built-in condition/monitor synchronization, not a subscriber endpoint.
+        if _is_notification_definition(text,match):
+            continue
+        direct_notify.add(match.group(1))
     consumers={x for x in notify_receivers|direct_notify if x.lower() not in _RECEIVER_NOISE}
     if len(consumers)<3: return []
     pos=min((text.lower().find(x.lower()) for x in consumers if text.lower().find(x.lower())>=0),default=0)
@@ -488,6 +497,31 @@ def _observer_findings(rel,text,proven_emissions=()):
         [f'{rel}:{_line(text,pos)}'],smell='direct-notification-fanout',
         guidance='Keep direct calls when the subscriber set, ordering, and failure semantics are deliberately fixed; use Observer when subscribers vary independently.',
         signals={'positive':[f'{len(consumers)} distinct notification consumers'],'negative':[]},scope='file')]
+
+
+def _is_notification_definition(text,match):
+    # Restrict declaration checks to the current statement so compact Java/JS
+    # classes do not hide real calls later in the same line.
+    start=max(text.rfind(token,0,match.start()) for token in ('\n',';','{','}'))+1
+    prefix=text[start:match.start()]
+    if re.search(r'\b(?:async\s+)?def\s+$|\bfunction\s+(?:\*)?\s*$',prefix):
+        return True
+    if re.search(r'(?:(?:public|private|protected|static|final|synchronized|native|abstract)\s+)*(?:void|boolean|byte|short|int|long|float|double|char|[A-Z]\w*(?:\s*<[^>]+>)?)(?:\s*\[\s*\])*\s+$',prefix):
+        return True
+
+    # Java/JavaScript method declarations have a body immediately after their
+    # parameter list; ordinary calls do not.
+    depth=0
+    close=None
+    for index in range(match.end()-1,len(text)):
+        if text[index]=='(':
+            depth+=1
+        elif text[index]==')':
+            depth-=1
+            if depth==0:
+                close=index
+                break
+    return close is not None and re.match(r'\s*(?:\{|:)',text[close+1:]) is not None
 
 
 def _chain_findings(rel,text):

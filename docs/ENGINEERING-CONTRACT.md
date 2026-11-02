@@ -309,3 +309,9 @@ quality metric is kept distinct from imposing a bound on it. Exact source reason
 declared-type precedence, unspecified cases and unverified satisfaction remain.
 Mixed feature/quality sentences can still disagree with the author's category;
 these are review suggestions, not recovered authoritative intent.
+
+`constraint-signals/4` adds ordinary English/Italian actions at the start of
+recognized modal predicates, with bounded adverbs and capability forms. A noun
+such as review/request in the subject or object does not activate the new rule.
+Declared categories and quality constraints keep precedence; passive and arbitrary
+prose remain partial. The original sentence and exact matched verb are retained.

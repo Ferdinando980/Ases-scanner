@@ -2,7 +2,29 @@
 
 Il benchmark confronta ciò che ASES ricostruisce con aspettative esplicite verificabili nei sorgenti. Un modello può superare lo schema e contenere comunque un falso allarme: i due controlli servono a scopi diversi.
 
-## Verifica corrente 1.13.1 — 27 ottobre 2026
+## Classificazione 1.14.0 — 2 novembre 2026
+
+Il confronto diretto del classificatore sulle stesse 735 frasi originali conserva
+etichette e denominatori. PROMISE passa da 537 a **554/625 (88,64%)**: 17 casi
+migliorano, nessuno peggiora rispetto alla 1.13.1. Restano 48 errori e 23 astensioni.
+ReqView resta **110/110**. Sono regressioni note, non nuovi dati indipendenti.
+
+Il profilo `constraint-signals/4` riconosce ulteriori azioni all'inizio del
+predicato modale, senza usare nomi di progetti o frasi del benchmark nelle regole.
+I nomi di azione nel soggetto o nell'oggetto non attivano questa estensione.
+Tipi dichiarati e vincoli di qualità mantengono precedenza.
+
+Funzionali PROMISE: TP236/FP39/FN19, precisione 85,82%, richiamo 92,55%.
+Non funzionali: TP318/FP9/FN52, precisione 97,25%, richiamo 85,95%.
+Il confronto misura la classificazione diretta, non riesegue l'estrazione dei
+documenti o la copertura dei flussi. La beta generale resta NO GO: il miglioramento
+non soddisfa da solo le soglie e la validazione indipendente della roadmap.
+
+Il profilo `pattern-opportunities/5` esclude inoltre notifiche di sincronizzazione
+e dichiarazioni di endpoint dal conteggio Observer. Le regressioni controllate
+conservano i casi positivi; non misurano l'accuratezza generale dei pattern.
+
+## Checkpoint storico 1.13.1 — 27 ottobre 2026
 
 Le due correzioni richieste riguardano copertura e classificazione. Le fonti,
 etichette e soglie originali restano immutate: **regressioni su casi noti**, non
